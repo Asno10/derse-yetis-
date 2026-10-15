@@ -1,0 +1,13 @@
+name: cors-check
+on:
+  push:
+    branches: [cors-check]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check that the live bus API allows requests from the Pages site
+        run: |
+          URL="https://openapi.izmir.bel.tr/api/iztek/hattinyaklasanotobusleri/568/31364"
+          curl -sS -m 25 -D - -o body.txt -H "Origin: https://asno10.github.io" "$URL" | grep -i -E "^HTTP|access-control|content-type" || echo "no response"
+          echo "body:"; head -c 200 body.txt; echo
