@@ -1,5 +1,5 @@
 // Offline support for Derse Yetiş. Caches only the app's own files; the live bus API is never cached.
-const CACHE = 'derse-yetis-v2';
+const CACHE = 'derse-yetis-v3';
 const ASSETS = [
   './',
   './index.html',

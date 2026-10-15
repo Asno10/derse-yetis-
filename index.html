@@ -31,20 +31,18 @@
 @font-face{font-family:"DotGothic16";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/dotgothic16-latin-ext-400-normal.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
 @font-face{font-family:"DotGothic16";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/dotgothic16-latin-400-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 
-/* Layout: a departure board in your pocket. A dark board band at the top (under the iOS status bar),
-   then one column: big leave time, an ESHOT-style LED destination sign, the door-to-desk timeline,
-   other buses. Fixed bottom tab bar like a native app. */
+/* Layout: one calm screen. A slim dark band under the iOS status bar, then a single answer:
+   the time to leave, the bus to catch, when you arrive, and one button. Everything else sits
+   behind "Ayrıntılar" or the gear. */
 :root{
-  --bg:#EDF0F3; --surface:#FFFFFF; --surface-2:#F5F7F9; --ink:#111820; --muted:#5A6573; --line:#D5DBE2;
+  --bg:#F1F3F5; --surface:#FFFFFF; --surface-2:#F4F6F8; --ink:#111820; --muted:#5F6A77; --line:#DADFE5;
   --accent:#0F6A8A; --accent-ink:#FFFFFF; --accent-soft:#DCEDF3;
   --ok:#1B8455; --ok-soft:#DDF1E6; --warn:#AE5E15; --warn-soft:#F8E8D5; --bad:#C23434; --bad-soft:#F8DEDE;
-  --bus:#C98200; --metro:#C8102E;
   --board:#14120D; --board-ink:#F3EEE2; --board-muted:#A79F8C;
-  --sign:#0E0C08; --sign-edge:#2B2619; --led:#FFB01F; --led-dim:rgba(255,176,31,.22);
+  --sign:#0E0C08; --led:#FFB01F;
   --f-display:"Barlow Condensed","Arial Narrow","Roboto Condensed",sans-serif;
   --f-body:"Overpass","Segoe UI",system-ui,-apple-system,sans-serif;
   --f-led:"DotGothic16",ui-monospace,"Courier New",monospace;
-  --r:14px;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
@@ -52,7 +50,6 @@
     --bg:#0D1217; --surface:#151C23; --surface-2:#1A222A; --ink:#E6EBF0; --muted:#94A1AF; --line:#26303A;
     --accent:#4DB1D2; --accent-ink:#062530; --accent-soft:#11303B;
     --ok:#4CC387; --ok-soft:#113425; --warn:#E59D55; --warn-soft:#3A2815; --bad:#F06C6C; --bad-soft:#3D1C1C;
-    --bus:#F0B13C; --metro:#F2617A;
     --board:#0A0906; --board-ink:#F3EEE2; --board-muted:#A79F8C;
     color-scheme:dark;
   }
@@ -61,222 +58,127 @@
   --bg:#0D1217; --surface:#151C23; --surface-2:#1A222A; --ink:#E6EBF0; --muted:#94A1AF; --line:#26303A;
   --accent:#4DB1D2; --accent-ink:#062530; --accent-soft:#11303B;
   --ok:#4CC387; --ok-soft:#113425; --warn:#E59D55; --warn-soft:#3A2815; --bad:#F06C6C; --bad-soft:#3D1C1C;
-  --bus:#F0B13C; --metro:#F2617A;
   --board:#0A0906; --board-ink:#F3EEE2; --board-muted:#A79F8C;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
-img{max-width:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
 .num{font-variant-numeric:tabular-nums}
+.wrap{max-width:440px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
 
-/* Board header */
-.board{background:var(--board);color:var(--board-ink);padding-top:calc(env(safe-area-inset-top,0px) + 14px);padding-bottom:16px}
-.board-in{max-width:460px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-.board h1{margin:0;font-family:var(--f-display);font-weight:600;font-size:30px;line-height:1.05;letter-spacing:.005em;text-wrap:balance}
-.board p{margin:3px 0 0;color:var(--board-muted);font-size:14px}
-.brand{display:flex;align-items:center;gap:6px;flex-shrink:0;font-family:var(--f-led);font-size:14px;letter-spacing:.06em;color:var(--led);text-shadow:0 0 6px rgba(255,176,31,.5);padding-top:6px}
+/* Top band */
+.band{background:var(--board);color:var(--board-ink);padding-top:calc(env(safe-area-inset-top,0px) + 10px);padding-bottom:12px}
+.band .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.band p{margin:0;font-size:15px;color:var(--board-muted)}
+.band b{color:var(--board-ink);font-weight:600}
+.iconbtn{border:0;background:transparent;color:var(--board-ink);width:44px;height:44px;margin-right:-10px;display:grid;place-items:center;border-radius:12px}
+.iconbtn svg{width:24px;height:24px}
 
-.app{max-width:460px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px calc(96px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
-.tab{display:flex;flex-direction:column;gap:14px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
-.eyebrow{margin:0;font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
-.muted{color:var(--muted)}
-.small{font-size:13px}
-h2{margin:0;font-family:var(--f-display);font-weight:600;font-size:22px;line-height:1.1;text-wrap:balance}
+main.wrap{padding-block:22px calc(32px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:20px}
 
-/* Targets */
-.targets{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
-.targets::-webkit-scrollbar{display:none}
-.tchip{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-start;gap:0;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);text-align:left;min-width:0}
-.tchip b{font-family:var(--f-display);font-weight:600;font-size:19px;line-height:1.1}
-.tchip span{font-size:12px;color:var(--muted);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tchip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.tchip[aria-pressed="true"] span{color:inherit;opacity:.75}
-.tchip.ghost{border-style:dashed;background:transparent;justify-content:center}
+/* Home */
+.target{align-self:flex-start;border:0;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:15px;font-weight:600;display:inline-flex;gap:8px;align-items:center}
+.target span{color:var(--muted);font-weight:500}
+.hero{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.label{margin:0;font-size:14px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.time{margin:0;font-family:var(--f-display);font-weight:600;font-size:clamp(96px,32vw,132px);line-height:.85;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.count{margin:6px 0 0;display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;font-weight:700;font-size:16px}
+.count.calm{background:var(--ok-soft);color:var(--ok)}
+.count.soon{background:var(--warn-soft);color:var(--warn)}
+.count.now{background:var(--bad);color:#fff}
+.count.future{background:var(--accent-soft);color:var(--accent)}
 
-/* Hero */
-.hero{display:flex;flex-direction:column;gap:12px}
-.hero-top{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.leave-label{margin:0;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.leave-time{margin:0;font-family:var(--f-display);font-weight:600;font-size:clamp(76px,25vw,108px);line-height:.86;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
-.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;font-weight:600;font-size:14px;white-space:nowrap}
-.pill.calm{background:var(--ok-soft);color:var(--ok)}
-.pill.soon{background:var(--warn-soft);color:var(--warn)}
-.pill.now,.pill.run{background:var(--bad);color:#fff}
-.pill.future{background:var(--accent-soft);color:var(--accent)}
-.pill .dot{width:8px;height:8px;border-radius:50%;background:currentColor}
-.pill.now .dot,.pill.run .dot{animation:blink 1s steps(2,start) infinite}
-@keyframes blink{to{visibility:hidden}}
-.fuse{height:6px;border-radius:6px;background:var(--surface-2);overflow:hidden;border:1px solid var(--line)}
-.fuse i{display:block;height:100%;background:var(--ok);transition:width .6s ease}
-.fuse.soon i{background:var(--warn)} .fuse.now i,.fuse.run i{background:var(--bad)}
+.facts{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.fact{display:flex;align-items:center;gap:14px;padding:14px 16px}
+.fact+.fact{border-top:1px solid var(--line)}
+.fact .k{flex:1;min-width:0}
+.fact .k b{display:block;font-size:17px;font-weight:600;line-height:1.25}
+.fact .k span{display:block;font-size:14px;color:var(--muted);line-height:1.3}
+.fact .v{font-family:var(--f-display);font-weight:600;font-size:30px;line-height:1;font-variant-numeric:tabular-nums}
+.v.ok{color:var(--ok)} .v.warn{color:var(--warn)} .v.bad{color:var(--bad)}
+.led{flex-shrink:0;background:var(--sign);color:var(--led);font-family:var(--f-led);font-size:20px;line-height:1;padding:8px 9px 6px;border-radius:8px;text-shadow:0 0 6px rgba(255,176,31,.55)}
+.pin{flex-shrink:0;width:38px;height:38px;border-radius:10px;background:var(--surface-2);display:grid;place-items:center;color:var(--muted)}
+.pin svg{width:20px;height:20px}
+.live{display:inline-flex;align-items:center;gap:6px}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block}
+.live.off i{background:var(--muted)}
 
-/* LED sign */
-.sign{position:relative;display:flex;align-items:center;gap:12px;background:var(--sign);border:1px solid var(--sign-edge);border-radius:10px;padding:12px 14px;color:var(--led);font-family:var(--f-led);text-shadow:0 0 6px rgba(255,176,31,.55);overflow:hidden}
-.sign::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.42) 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,rgba(0,0,0,.42) 0 1px,transparent 1px 3px)}
-.sign-num{font-size:40px;line-height:1;padding:4px 8px 2px;border:1px solid var(--led-dim);border-radius:4px;flex-shrink:0}
-.sign-dest{display:flex;flex-direction:column;min-width:0;gap:4px}
-.sign-dest b{font-weight:400;font-size:22px;letter-spacing:.05em;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sign-dest small{font-size:13px;letter-spacing:.04em;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.primary{width:100%;min-height:60px;border:0;border-radius:18px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:18px}
+.secondary{width:100%;min-height:48px;border:1px solid var(--line);border-radius:14px;background:var(--surface);font-weight:600;font-size:16px}
+.quiet{align-self:center;border:0;background:transparent;color:var(--muted);font-weight:600;font-size:15px;padding:8px 12px;border-radius:10px}
+.note{margin:0;font-size:14px;color:var(--muted);text-align:center}
 
-/* Live line */
-.live{margin:0;display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.35}
-.live .ld{flex-shrink:0;width:8px;height:8px;margin-top:4px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px var(--ok-soft)}
-.live .ld.off{background:var(--muted);box-shadow:0 0 0 3px var(--surface-2)}
-.live .ld.wait{background:var(--warn);box-shadow:0 0 0 3px var(--warn-soft)}
-.live b{font-weight:600}
-.live span.age{color:var(--muted)}
-
-/* Arrival */
-.arrival{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center}
-.arrival .big{font-family:var(--f-display);font-weight:600;font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
-.prob{font-family:var(--f-display);font-weight:600;font-size:30px;line-height:1;text-align:right;font-variant-numeric:tabular-nums}
-.prob.ok{color:var(--ok)} .prob.warn{color:var(--warn)} .prob.bad{color:var(--bad)}
-.arrival p{margin:0}
-
-/* Timeline */
-.tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;position:relative}
-.tl li{display:grid;grid-template-columns:52px 18px 1fr;gap:0 10px;align-items:start;padding:7px 0;position:relative}
-.tl li::before{content:"";position:absolute;left:70px;top:0;bottom:0;width:2px;background:var(--line)}
-.tl li:first-child::before{top:14px} .tl li:last-child::before{bottom:calc(100% - 14px)}
-.tl time{font-family:var(--f-display);font-weight:600;font-size:19px;line-height:1.2;font-variant-numeric:tabular-nums;text-align:right}
-.tl .mk{width:12px;height:12px;margin:5px 0 0 3px;border-radius:50%;background:var(--surface);border:2px solid var(--muted);position:relative;z-index:1}
-.tl .mk.bus{background:var(--bus);border-color:var(--bus);border-radius:3px}
-.tl .mk.metro{background:var(--metro);border-color:var(--metro);border-radius:3px}
-.tl .mk.end{background:var(--ink);border-color:var(--ink)}
-.tl .tx{min-width:0}
-.tl .tx b{display:block;font-weight:600}
-.tl .tx span{display:block;font-size:13px;color:var(--muted)}
-
-/* Options */
-.opts{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
-.opts::-webkit-scrollbar{display:none}
-.opt{flex:1 0 92px;display:flex;flex-direction:column;gap:2px;align-items:flex-start;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);text-align:left}
-.opt b{font-family:var(--f-display);font-weight:600;font-size:22px;line-height:1;font-variant-numeric:tabular-nums}
-.opt .p{font-weight:700;font-size:14px}
-.opt .p.ok{color:var(--ok)} .opt .p.warn{color:var(--warn)} .opt .p.bad{color:var(--bad)}
-.opt small{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.opt[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
-
-/* Buttons */
-.primary{width:100%;min-height:58px;border:0;border-radius:var(--r);background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:17px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:8px 14px}
-.primary small{font-weight:500;font-size:12px;opacity:.85}
-.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 14px;font-weight:600;font-size:14px}
-.btn.quiet{background:transparent}
-.btn.danger{color:var(--bad)}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.row.spread{justify-content:space-between}
+/* Details */
+.details{display:flex;flex-direction:column;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px}
+.details h3{margin:0;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.steps li{display:grid;grid-template-columns:48px 1fr;gap:10px;align-items:baseline}
+.steps time{font-family:var(--f-display);font-weight:600;font-size:18px;font-variant-numeric:tabular-nums;text-align:right}
+.steps span{font-size:15px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:8px 12px;display:flex;flex-direction:column;align-items:flex-start;gap:0}
+.chip b{font-family:var(--f-display);font-weight:600;font-size:20px;line-height:1.1;font-variant-numeric:tabular-nums}
+.chip span{font-size:13px;font-weight:700}
+.chip[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.chip .ok{color:var(--ok)} .chip .warn{color:var(--warn)} .chip .bad{color:var(--bad)}
+.details p{margin:0;font-size:15px}
 a.link{color:var(--accent);font-weight:600;text-decoration:none}
-a.link:hover{text-decoration:underline}
-.checks{display:flex;flex-direction:column;gap:10px}
-.code{font-family:var(--f-display);font-weight:600;font-size:18px;letter-spacing:.04em}
 
-/* Tracker */
-.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
-.steps li{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:10px}
-.steps li.cur{background:var(--accent-soft);color:var(--accent);font-weight:600}
-.steps li.done{color:var(--muted)}
-.steps li.done b::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:8px;vertical-align:1px}
-.steps li.skip{color:var(--muted);text-decoration:line-through}
-.steps b{font-weight:inherit}
-
-/* Welcome */
-.welcome{background:var(--surface);border:1px solid var(--line)}
-.welcome p{margin:6px 0 0}
-.welcome ol{margin:14px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:12px}
-.welcome li::marker{font-weight:700;color:var(--accent)}
-
-/* Forms */
-label.f{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:14px}
-label.f span.h{font-weight:400;font-size:12px;color:var(--muted)}
-input[type=text],input[type=time],input[type=number],select,textarea{width:100%;min-width:0;border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:10px 12px;font-size:16px}
-textarea{min-height:76px;resize:vertical;font-size:13px;font-family:ui-monospace,monospace}
-.days{display:flex;gap:6px;flex-wrap:wrap}
-.days button{min-width:44px;padding:8px 0;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);font-weight:600;font-size:13px}
+/* Picker and settings */
+.list{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border:0;background:transparent;text-align:left;width:100%}
+.row+.row{border-top:1px solid var(--line)}
+.row b{font-family:var(--f-display);font-weight:600;font-size:22px;font-variant-numeric:tabular-nums}
+.row span{color:var(--muted);font-size:15px}
+.row[aria-pressed="true"]{background:var(--accent-soft)}
+h2{margin:0;font-family:var(--f-display);font-weight:600;font-size:26px;line-height:1.1}
+.section{display:flex;flex-direction:column;gap:12px}
+.section h3{margin:0;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:14px}
+label.f{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:15px}
+input[type=text],input[type=time],input[type=number],select,textarea{width:100%;min-width:0;border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:12px;font-size:16px}
+textarea{min-height:72px;resize:vertical;font-size:13px;font-family:ui-monospace,monospace}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.days button{padding:10px 0;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);font-weight:600;font-size:13px}
 .days button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.seg button{flex:1;padding:9px 6px;border:0;background:var(--surface-2);font-weight:600;font-size:13px}
+.addrow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 16px;font-weight:700;font-size:15px}
+.btn.solid{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.danger{color:var(--bad)}
+.lec{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0}
+.lec+.lec{border-top:1px solid var(--line)}
+.lec span{font-weight:600}
+.lec b{font-family:var(--f-display);font-weight:600;font-size:20px;font-variant-numeric:tabular-nums;margin-left:8px}
+.x{border:0;background:transparent;color:var(--muted);font-size:22px;line-height:1;padding:6px 10px;border-radius:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.seg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.seg button{flex:1;padding:10px 6px;border:0;background:var(--surface-2);font-weight:600;font-size:14px}
 .seg button+button{border-left:1px solid var(--line)}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
-.stack{display:flex;flex-direction:column;gap:14px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media (max-width:360px){.grid2{grid-template-columns:1fr}}
+.back{align-self:flex-start;border:0;background:transparent;color:var(--accent);font-weight:700;font-size:16px;padding:6px 0}
+.small{font-size:14px}
+.muted{color:var(--muted)}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-
-/* Lecture list */
-.dayblock{display:flex;flex-direction:column;gap:6px}
-.dayblock h3{margin:0;font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
-.lec{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:10px;background:var(--surface-2)}
-.lec b{font-family:var(--f-display);font-weight:600;font-size:20px;font-variant-numeric:tabular-nums;flex-shrink:0}
-.lec span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.x{border:0;background:transparent;color:var(--muted);font-size:20px;line-height:1;padding:4px 8px;border-radius:8px}
-
-/* Stats */
-.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
-.tile b{font-family:var(--f-display);font-weight:600;font-size:26px;line-height:1;font-variant-numeric:tabular-nums}
-.tile span{font-size:12px;color:var(--muted);line-height:1.25}
-.tbl-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
-th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
-td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
-.hist{width:100%;height:auto;display:block}
-.empty{padding:18px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);text-align:left}
-.empty b{display:block;color:var(--ink);margin-bottom:4px}
-.privacy{display:flex;gap:10px;align-items:flex-start}
-.privacy svg{flex-shrink:0;width:20px;height:20px;color:var(--ok);margin-top:1px}
-
-/* Tab bar */
-.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
-.tabbar .in{max-width:460px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
-.tabbar button{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 4px 10px;font-size:11px;font-weight:600;color:var(--muted)}
-.tabbar button svg{width:22px;height:22px}
-.tabbar button[aria-selected="true"]{color:var(--ink)}
-.tabbar button[aria-selected="true"] svg{color:var(--accent)}
-
-.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:6;width:max-content;max-width:min(420px,calc(100% - 32px));background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:12px;font-size:14px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.2)}
-.foot{font-size:12px;color:var(--muted);line-height:1.5}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:6;width:max-content;max-width:min(400px,calc(100% - 32px));background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:14px;font-size:15px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
-<header class="board">
-  <div class="board-in">
-    <div>
-      <h1 id="greet">Merhaba</h1>
-      <p id="dateline" class="num"></p>
-    </div>
-    <div class="brand" aria-hidden="true">DERSE YETİŞ</div>
+<header class="band">
+  <div class="wrap">
+    <p id="dateline" class="num"></p>
+    <button class="iconbtn" id="gear" data-act="settings" aria-label="Ayarlar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
   </div>
 </header>
-<div class="app">
-  <main>
-    <section id="tab-plan" class="tab" aria-labelledby="tb-plan"></section>
-    <section id="tab-lectures" class="tab" aria-labelledby="tb-lectures" hidden></section>
-    <section id="tab-stats" class="tab" aria-labelledby="tb-stats" hidden></section>
-    <section id="tab-settings" class="tab" aria-labelledby="tb-settings" hidden></section>
-  </main>
-</div>
+<main class="wrap" id="view"></main>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-<nav class="tabbar" aria-label="Bölümler">
-  <div class="in" role="tablist">
-    <button id="tb-plan" role="tab" data-tab="plan" aria-selected="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span data-i="tabPlan">Plan</span></button>
-    <button id="tb-lectures" role="tab" data-tab="lectures" aria-selected="false">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span data-i="tabLectures">Dersler</span></button>
-    <button id="tb-stats" role="tab" data-tab="stats" aria-selected="false">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-6"/></svg><span data-i="tabStats">İstatistik</span></button>
-    <button id="tb-settings" role="tab" data-tab="settings" aria-selected="false">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span data-i="tabSettings">Ayarlar</span></button>
-  </div>
-</nav>
 
 <script>
 (function(){
@@ -313,11 +215,11 @@ const STOPS = [
   {id:31386, n:'Sevgi',            d:2927, la:38.48400, lo:27.20490},
   {id:32423, n:'Seyit Şanlı Anadolu Lisesi', d:3184, la:38.48185, lo:27.20410}
 ];
-// Prior full-route ride time (terminal to Bornova Metro, minutes) by departure band; weekend factors.
 const FULL_RIDE = {early:34, am:38, mid:36, pm:40, night:30};
 const DAYF = {wd:1, sat:0.93, sun:0.88};
 const BANDS = ['early','am','mid','pm','night'];
 const N_SIM = 1600;
+const CONF = 0.9;
 
 function band(m){ if (m < 420) return 'early'; if (m < 600) return 'am'; if (m < 960) return 'mid'; if (m < 1200) return 'pm'; return 'night'; }
 function dayTypeOf(date){ const d = date.getDay(); return d === 0 ? 'sun' : d === 6 ? 'sat' : 'wd'; }
@@ -327,103 +229,81 @@ function frac(id){ return (ROUTE_LEN - stopById(id).d) / ROUTE_LEN; }
 function passMed(dep, stopId, dt){ return dep + FULL_RIDE[band(dep)] * DAYF[dt] * stopById(stopId).d / ROUTE_LEN; }
 function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function nrm(r){ let u = 0; while (u === 0) u = r(); const v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
-function expo(r, mean){ return -Math.log(1 - r()) * mean; }
+function expo(r, m){ return -Math.log(1 - r()) * m; }
 function pick(a, r){ return a[Math.floor(r() * a.length)]; }
 function wt(n, k){ return n / (n + k); }
 function median(a){ if (!a.length) return null; const s = [...a].sort((x, y) => x - y); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
 function mean(a){ return a.length ? a.reduce((x, y) => x + y, 0) / a.length : null; }
 function quant(sorted, q){ if (!sorted.length) return NaN; const i = Math.min(sorted.length - 1, Math.max(0, Math.round(q * (sorted.length - 1)))); return sorted[i]; }
 function headwayAt(dt, m){ for (const [a, b, h] of METRO[dt]) if (m >= a && m < b) return h; return null; }
-function busHeadwayAt(dt, m){ const d = TT[dt]; for (let i = 0; i < d.length - 1; i++) if (d[i + 1] > m) return d[i + 1] - d[i]; return null; }
-function metroWait(dt, m, r){ if (m < 360) return (360 - m) + r() * 7.5; if (m >= 1460) return 600; const h = headwayAt(dt, m) || 10; return r() * h; }
-
+function metroWait(dt, m, r){ if (m < 360) return (360 - m) + r() * 7.5; if (m >= 1460) return 600; return r() * (headwayAt(dt, m) || 10); }
+// Expected minutes from boarding the bus to reaching the department (timetable model, no personal data).
+function priorPost(set, b, dt, stopId, boardMin){
+  const ride = FULL_RIDE[b] * DAYF[dt] * frac(stopId);
+  const h = headwayAt(dt, boardMin + ride + set.transfer) || 10;
+  return ride + set.transfer + h / 2 + 2.5 + set.walkFromMetro;
+}
+// Learned from her own trips: bus deviation at her stop, and how long boarding-to-department really takes (as a ratio to the model).
 function buildModel(state){
-  const obs = {delay:[], walk:[], ride:{early:[], am:[], mid:[], pm:[], night:[]}, rest:[]};
+  const obs = {delay: [], post: {early: [], am: [], mid: [], pm: [], night: []}};
   for (const t of state.trips){
     const x = t.t || {};
     if (t.delay != null && t.delay > -6 && t.delay < 30) obs.delay.push(t.delay);
-    if (x.leave && x.atStop){ const w = (x.atStop - x.leave) / 60000; if (w > 0.3 && w < 40) obs.walk.push(w); }
-    if (x.board && x.offBus && t.dep != null){
-      const b = band(t.dep), ride = (x.offBus - x.board) / 60000;
-      const full = ride / frac(t.stopId) / DAYF[t.dt || 'wd'];
-      if (full > FULL_RIDE[b] * 0.35 && full < FULL_RIDE[b] * 3) obs.ride[b].push(full);
+    if (x.board && x.arrive && t.dep != null){
+      const b = band(t.dep), boardMin = (x.board - t.base) / 60000, post = (x.arrive - x.board) / 60000;
+      const ratio = post / priorPost(state.set, b, t.dt || 'wd', t.stopId, boardMin);
+      if (ratio > 0.4 && ratio < 2.5) obs.post[b].push(ratio);
     }
-    if (x.offBus && x.arrive){ const rest = (x.arrive - x.offBus) / 60000; if (rest > 4 && rest < 70) obs.rest.push(rest); }
   }
-  const pooled = [];
-  for (const b of BANDS) for (const v of obs.ride[b]) pooled.push(v / FULL_RIDE[b]);
+  const pooled = []; for (const b of BANDS) pooled.push(...obs.post[b]);
   return {set: state.set, obs, pooled, n: state.trips.length};
 }
-function walkMed(M){ const o = M.obs.walk, s = M.set.walkToStop; if (!o.length) return s; const w = wt(o.length, 3); return w * median(o) + (1 - w) * s; }
-function sampleWalk(M, r){ const o = M.obs.walk; if (o.length && r() < wt(o.length, 3)) return Math.max(0.3, pick(o, r) + nrm(r) * 0.25); return Math.max(0.5, M.set.walkToStop + nrm(r) * 0.4); }
+function ratioMed(M, b){
+  const o = M.obs.post[b];
+  if (o.length){ const w = wt(o.length, 4); return w * median(o) + (1 - w); }
+  if (M.pooled.length){ const w = wt(M.pooled.length, 8); return w * median(M.pooled) + (1 - w); }
+  return 1;
+}
 function sampleDelay(M, r){ const o = M.obs.delay; if (o.length && r() < wt(o.length, 4)) return pick(o, r) + nrm(r) * 0.3; let d = 0.5 + nrm(r) * 0.9; if (r() < 0.1) d += expo(r, 4); return Math.max(-1.5, d); }
-function sampleRideFull(M, b, dt, r){
-  const o = M.obs.ride[b];
-  if (o.length && r() < wt(o.length, 4)) return pick(o, r) * DAYF[dt] * Math.exp(nrm(r) * 0.04);
-  if (!o.length && M.pooled.length && r() < wt(M.pooled.length, 8)) return pick(M.pooled, r) * FULL_RIDE[b] * DAYF[dt] * Math.exp(nrm(r) * 0.05);
-  let v = FULL_RIDE[b] * DAYF[dt] * Math.exp(nrm(r) * 0.11);
-  if (r() < 0.05) v += expo(r, 5);
-  return v;
-}
-function rideMedFull(M, b, dt){
-  const o = M.obs.ride[b], p = FULL_RIDE[b];
-  if (o.length){ const w = wt(o.length, 4); return (w * median(o) + (1 - w) * p) * DAYF[dt]; }
-  if (M.pooled.length){ const w = wt(M.pooled.length, 8); return (w * median(M.pooled) * p + (1 - w) * p) * DAYF[dt]; }
-  return p * DAYF[dt];
-}
-function sampleRest(M, off, dt, r){
-  const o = M.obs.rest;
-  if (o.length && r() < wt(o.length, 4)) return pick(o, r) + nrm(r) * 0.4;
-  const tr = Math.max(1.5, M.set.transfer + nrm(r) * 0.8);
-  return tr + metroWait(dt, off + tr, r) + 2.5 + nrm(r) * 0.25 + Math.max(3, M.set.walkFromMetro + nrm(r) * 1.0);
+function samplePost(M, b, dt, stopId, boardMin, r){
+  const o = M.obs.post[b];
+  if (o.length && r() < wt(o.length, 4)) return pick(o, r) * priorPost(M.set, b, dt, stopId, boardMin) * Math.exp(nrm(r) * 0.04);
+  if (!o.length && M.pooled.length && r() < wt(M.pooled.length, 8)) return pick(M.pooled, r) * priorPost(M.set, b, dt, stopId, boardMin) * Math.exp(nrm(r) * 0.05);
+  let ride = FULL_RIDE[b] * DAYF[dt] * Math.exp(nrm(r) * 0.11); if (r() < 0.05) ride += expo(r, 5);
+  ride *= frac(stopId);
+  const off = boardMin + ride, tr = Math.max(1.5, M.set.transfer + nrm(r) * 0.8);
+  return ride + tr + metroWait(dt, off + tr, r) + 2.5 + nrm(r) * 0.25 + Math.max(3, M.set.walkFromMetro + nrm(r));
 }
 function seedOf(){ let h = 2166136261; for (const a of arguments){ const s = String(a); for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } } return h >>> 0; }
-
-// Simulate leaving at `leave` aiming for bus index k0 (falls back to later buses when missed).
-function simLeave(M, dt, stopId, leave, k0, seed, fixedStop){
-  const deps = TT[dt], r = mulberry32(seed), out = new Float64Array(N_SIM), f = frac(stopId);
-  let missed = 0;
+// Leave at `leave`, aim for bus k0; if she misses it she takes the next one.
+function simLeave(M, dt, stopId, leave, k0, seed){
+  const deps = TT[dt], r = mulberry32(seed), out = new Float64Array(N_SIM);
   for (let i = 0; i < N_SIM; i++){
-    const tStop = fixedStop != null ? fixedStop : leave + sampleWalk(M, r);
+    const tStop = leave + Math.max(0.5, M.set.walkToStop + nrm(r) * 0.4);
     let j = k0, board = -1;
     while (j < deps.length && j < k0 + 5){ const a = passMed(deps[j], stopId, dt) + sampleDelay(M, r); if (a >= tStop){ board = a; break; } j++; }
-    if (board < 0){ out[i] = Infinity; continue; }
-    if (j > k0) missed++;
-    const off = board + sampleRideFull(M, band(deps[j]), dt, r) * f;
-    out[i] = off + sampleRest(M, off, dt, r);
+    out[i] = board < 0 ? Infinity : board + samplePost(M, band(deps[j]), dt, stopId, board, r);
   }
-  out.sort();
-  return {arr: out, missed: missed / N_SIM};
+  out.sort(); return out;
 }
 function simBoard(M, dt, stopId, dep, boardMin, seed){
-  const r = mulberry32(seed), out = new Float64Array(N_SIM), f = frac(stopId), b = band(dep);
-  for (let i = 0; i < N_SIM; i++){ const off = boardMin + sampleRideFull(M, b, dt, r) * f; out[i] = off + sampleRest(M, off, dt, r); }
-  out.sort(); return {arr: out, missed: 0};
+  const r = mulberry32(seed), out = new Float64Array(N_SIM), b = band(dep);
+  for (let i = 0; i < N_SIM; i++) out[i] = boardMin + samplePost(M, b, dt, stopId, boardMin, r);
+  out.sort(); return out;
 }
-function simOff(M, dt, offMin, seed){
-  const r = mulberry32(seed), out = new Float64Array(N_SIM);
-  for (let i = 0; i < N_SIM; i++) out[i] = offMin + sampleRest(M, offMin, dt, r);
-  out.sort(); return {arr: out, missed: 0};
-}
-function summarize(arr, deadline, lecture){
-  let c = 0, c2 = 0; for (const v of arr){ if (v <= deadline) c++; if (v <= lecture) c2++; }
-  return {p: c / arr.length, pLecture: c2 / arr.length, q10: quant(arr, .1), q50: quant(arr, .5), q90: quant(arr, .9)};
-}
-function pickRec(opts, conf){
+function summarize(arr, deadline){ let c = 0; for (const v of arr) if (v <= deadline) c++; return {p: c / arr.length, q10: quant(arr, .1), q50: quant(arr, .5), q90: quant(arr, .9)}; }
+function pickRec(opts){
   let rec = -1;
-  for (let i = opts.length - 1; i >= 0; i--) if (opts[i].p >= conf){ rec = i; break; }
+  for (let i = opts.length - 1; i >= 0; i--) if (opts[i].p >= CONF){ rec = i; break; }
   if (rec < 0 && opts.length){ rec = 0; for (let i = 1; i < opts.length; i++) if (opts[i].p > opts[rec].p + 0.005) rec = i; }
   return rec;
 }
-// Plan: all buses that can bring her to the lecture; pick the latest one that meets the confidence target.
 function planFor(state, dt, L, nowMin){
-  const deps = TT[dt], M = buildModel(state), stopId = state.set.stopId, wm = walkMed(M);
+  const deps = TT[dt], M = buildModel(state), stopId = state.set.stopId, wm = state.set.walkToStop;
   const margin = 1.5, deadline = L - state.set.buffer, opts = [];
   const mk = k => {
-    const pass = passMed(deps[k], stopId, dt);
-    const leave = Math.floor(pass - margin - wm);
-    const sim = simLeave(M, dt, stopId, leave, k, seedOf(dt, k, stopId, deps[k], M.n, L));
-    return Object.assign({k, dep: deps[k], pass, leave, missed: sim.missed}, summarize(sim.arr, deadline, L));
+    const pass = passMed(deps[k], stopId, dt), leave = Math.floor(pass - margin - wm);
+    return Object.assign({k, dep: deps[k], pass, leave}, summarize(simLeave(M, dt, stopId, leave, k, seedOf(dt, k, stopId, M.n, L, wm, state.set.walkFromMetro, state.set.buffer)), deadline));
   };
   for (let k = 0; k < deps.length; k++){
     const pass = passMed(deps[k], stopId, dt);
@@ -433,221 +313,138 @@ function planFor(state, dt, L, nowMin){
   }
   let late = false;
   if (!opts.length && nowMin != null){
-    for (let k = 0; k < deps.length && opts.length < 3; k++){
+    for (let k = 0; k < deps.length && opts.length < 2; k++){
       const pass = passMed(deps[k], stopId, dt);
       if (Math.floor(pass - margin - wm) >= nowMin - 2 && pass < L + 120) opts.push(mk(k));
     }
     late = opts.length > 0;
   }
-  return {dt, opts, rec: pickRec(opts, state.set.conf), deadline, L, M, wm, margin, late};
+  return {dt, opts, rec: pickRec(opts), deadline, L, M, wm, margin, late};
 }
 function inferBus(dt, stopId, boardMin){
   let best = null, bd = 1e9;
   for (const d of TT[dt]){ const diff = boardMin - passMed(d, stopId, dt); if (diff < -4 || diff > 25) continue; const sc = Math.abs(diff - 0.7); if (sc < bd){ bd = sc; best = d; } }
   return best == null ? null : {dep: best, delay: boardMin - passMed(best, stopId, dt)};
 }
-// Live: interpret the open-data "approaching buses" list for her stop.
 function haversine(la1, lo1, la2, lo2){ const R = 6371000, r = Math.PI / 180, a = Math.sin((la2 - la1) * r / 2) ** 2 + Math.cos(la1 * r) * Math.cos(la2 * r) * Math.sin((lo2 - lo1) * r / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(a)); }
+// Interpret the open-data "approaching buses" list for her stop.
 function parseLive(list, stopId, dt, nowMin){
   const si = stopIndex(stopId), me = stopById(stopId), term = STOPS[0], out = [];
-  const speed = ROUTE_LEN / (FULL_RIDE[band(nowMin)] * DAYF[dt]); // metres per minute
+  const speed = ROUTE_LEN / (FULL_RIDE[band(nowMin)] * DAYF[dt]);
   for (const b of list || []){
     if (b == null) continue;
     if (b.HatNumarasi != null && +b.HatNumarasi !== 568) continue;
     const K = +b.KalanDurakSayisi;
     const la = parseFloat(String(b.KoorX).replace(',', '.')), lo = parseFloat(String(b.KoorY).replace(',', '.'));
     if (!isFinite(K) || K < 0) continue;
-    if (isFinite(la) && isFinite(lo) && haversine(la, lo, me.la, me.lo) > 4500) continue; // stale or bad GPS fix
+    if (isFinite(la) && isFinite(lo) && haversine(la, lo, me.la, me.lo) > 4500) continue;
     const atTerminal = isFinite(la) && isFinite(lo) && haversine(la, lo, term.la, term.lo) < 180;
     let kind, eta = null;
     if (atTerminal || (si > 0 && K === si) || (si === 0 && K === 0)) kind = 'terminal';
     else if (K > si) kind = 'return';
     else { kind = 'coming'; eta = K === 0 ? 0 : Math.max(0.5, (me.d - STOPS[si - K].d) / speed + K * 0.2); }
-    out.push({id: b.OtobusId, K, kind, eta});
+    out.push({K, kind, eta});
   }
-  out.sort((a, b) => (a.kind === 'coming' ? 0 : a.kind === 'terminal' ? 1 : 2) - (b.kind === 'coming' ? 0 : b.kind === 'terminal' ? 1 : 2) || (a.K - b.K));
+  out.sort((a, b) => ({coming: 0, terminal: 1, return: 2}[a.kind] - {coming: 0, terminal: 1, return: 2}[b.kind]) || (a.K - b.K));
   return out;
 }
 /* MODEL END */
 
-/* ---------- i18n ---------- */
+/* ---------- Words ---------- */
 const DICT = {
   tr: {
-    tabPlan:'Plan', tabLectures:'Dersler', tabStats:'İstatistik', tabSettings:'Ayarlar',
-    gMorning:'Günaydın', gDay:'İyi günler', gEve:'İyi akşamlar', gNight:'İyi geceler',
-    days:['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'],
-    daysShort:['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'],
+    days:['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'], daysShort:['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'],
     months:['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'],
-    today:'Bugün', tomorrow:'Yarın', example:'Örnek ders', otherTime:'Başka saat',
-    customFor:'Varmak istediğin saat', customToday:'Bugün', customTomorrow:'Yarın', apply:'Planla',
-    exampleNote:'Bu bir örnek. Ders programını girince plan her gün sıradaki dersine göre hazırlanır.', addLectures:'Derslerini ekle',
-    leaveHome:'Evden çık', inHM:'{h} sa {m} dk sonra', inM:'{m} dk sonra', now:'Şimdi çık', run:'Hemen çık, hızlı yürü', soon:'Hazırlan · {m} dk',
-    busSignSub:'{t} · {stop}', busArrives:'Otobüsün durağa gelişi {t}. Bir dakika erken orada ol.', busArrivesLive:'Canlı konuma göre otobüs durağa {t} civarında gelir.',
-    liveLoading:'Canlı otobüs verisi alınıyor', liveDown:'Canlı veri şu an alınamıyor, tarife kullanılıyor',
-    liveComing:'Canlı: 568 durağına {k} durak uzakta, yaklaşık {m} dk', liveAtStop:'Canlı: 568 şu an durağında',
-    liveTerminal:'Canlı: 568 Evka 4 son durakta bekliyor', liveReturn:'Canlı: sıradaki 568 son durağa dönüyor', liveNone:'Canlı: şu an yaklaşan 568 yok',
-    liveAge:'{s} sn önce', liveAgeMin:'{m} dk önce',
-    arrive:'Bölüme varış', likely:'Büyük olasılıkla {a} ile {b} arası', onTime:'zamanında', ofLecture:'Ders {t} · {n} dk erken varış hedefi',
-    legLeave:'Evden çık', legLeaveSub:'{n} dk yürü, {stop}',
-    legBus:'568 durağa gelir', legBusSub:'{stop} · durak no {id}',
-    legOff:'Bornova Metro’da in', legOffSub:'Yaklaşık {n} dk otobüs',
-    legMetro:'Metroya bin', legMetroSub:'Her {h} dk bir tren · 1 durak',
-    legUni:'Ege Üniversitesi istasyonu', legUniSub:'{n} dk yürü',
-    legDept:'Makine Mühendisliği', legDeptSub:'Ders {t}',
-    others:'Diğer otobüsler', rec:'Önerilen', live:'Canlı', lateTitle:'Bu derse yetişmek zor', lateSub:'En erken seçenekler aşağıda. Gecikme tahmini dahil.',
-    noBus:'Bu saat için uygun 568 seferi yok', noBusSub:'Otobüsler bu saatte çalışmıyor olabilir. Başka bir saat dene.',
-    start:'Yola çıkıyorum', startSub:'Yolculuğu kaydet, tahminler sana göre öğrensin',
-    futureNote:'Plan {d} için. Yola çıkış düğmesi o gün çıkar.',
-    liveTitle:'Kontrol', liveMaps:'Google Haritalar’da yolu aç', liveEshot:'ESHOT uygulamasında durak numaran', copy:'Kopyala', copied:'Kopyalandı', copyFail:'Kopyalanamadı, numarayı elle seç',
-    onWay:'Yoldasın', eta:'Tahmini varış', etaFor:'{t} dersi için', nextBus:'Sıradaki 568 {t}', nextBusIn:'{m} dk içinde',
-    stLeave:'Evden çıktım', stAtStop:'Duraktayım', stBoard:'568’e bindim', stOff:'Bornova’da indim', stArrive:'Bölüme vardım',
-    skip:'Bu adımı atla', del:'Yolculuğu sil', delConfirm:'Silmek için tekrar dokun', deleted:'Yolculuk silindi',
-    saved:'Kaydedildi. Varış {t}, dersten {n} dk önce.', savedLate:'Kaydedildi. Varış {t}, {n} dk geç.', savedPlain:'Kaydedildi, tahminler güncellendi.',
-    welcomeHi:'Hoş geldin', welcomeSub:'Üç adımda hazır. Sonra uygulamayı açman yeterli: ne zaman çıkman gerektiğini söyler.',
-    w0:'Adın (isteğe bağlı, yalnızca selamlama için)', w1:'Bindiğin durak', w2:'Haftalık ders programını bir kez gir', ready:'Hazırım',
-    lecTitle:'Ders programın', lecAdd:'Ders ekle', lecName:'Ders adı', lecNameH:'İsteğe bağlı', lecTime:'Başlangıç saati', lecDays:'Günler', lecAddBtn:'Ekle', lecPickDay:'En az bir gün seç',
-    lecEmpty:'Henüz ders yok. Programını bir kez gir; uygulama her açılışta sıradaki dersini bulur.', lecAdded:'Ders eklendi', lecNote:'Plan her zaman sıradaki dersini hedefler.', lecDel:'Sil',
-    stTitle:'İstatistik', tTrips:'kayıtlı yolculuk', tAvg:'ortalama kapıdan sınıfa', tOnTime:'derse yetişme',
-    sBus:'568 senin durağında', sBusSub:'Tarifeye göre otobüsün durağa gelme sapması', sDelayYou:'Senin ortalaman {v} dk ({n} yolculuk)', sDelayModel:'Model: çoğu zaman 0 ile 2 dk arası geç, ara sıra daha fazla',
-    sRide:'Otobüs yolculuğu', sRideSub:'Senin durağından Bornova Metro’ya, dakika', thBand:'Zaman', thModel:'Model', thYou:'Senin',
-    bands:{early:'07:00 öncesi', am:'07:00 - 10:00', mid:'10:00 - 16:00', pm:'16:00 - 20:00', night:'20:00 sonrası'},
-    sRest:'Metro ve yürüyüş', sRestSub:'Bornova’da inişten bölüme, dakika', sRestModel:'Model {v} dk', sRestYou:'Senin ortalaman {v} dk ({n})',
-    sNow:'Şu anki sıklık', sNowBus:'568 her {n} dk', sNowMetro:'Metro her {n} dk', sNone:'sefer yok',
-    sHist:'Kapıdan sınıfa süreler', sRecent:'Son yolculuklar', sEmptyT:'Kişisel istatistikler burada birikir', sEmpty:'Her yolculukta birkaç dokunuş yeter. Üç yolculuktan sonra tahminler senin gerçek sürelerine göre şekillenir.',
-    min:'dk',
-    setTitle:'Ayarlar', setName:'Adın', setStop:'Bindiğin durak', setWalk:'Evden durağa yürüme', setWalk2:'Ege Üniversitesi istasyonundan bölüme', setTransfer:'Bornova’da otobüsten trene geçiş', setBuffer:'Dersten kaç dk önce orada ol',
-    setConf:'Güven düzeyi', confHi:'Rahat %95', confMid:'Dengeli %90', confLo:'Sıkı %75', setLang:'Dil', unitMin:'dakika',
-    privTitle:'Gizlilik', privBody:'Adın, ders programın ve yolculukların yalnızca bu telefonda saklanır. Hiçbir sunucuya gönderilmez, hesap yok, çerez ve takip yok. Canlı otobüs bilgisi için İzmir Büyükşehir Belediyesi’nin açık veri servisine yalnızca durak numarası sorulur.',
-    storeOk:'Bu cihazda kalıcı olarak kaydediliyor', storeMaybe:'Bu cihazda kaydediliyor', storeBad:'Bu tarayıcı verileri saklamıyor. Yedek kodunu bir yere not al.',
-    setData:'Yedek', setDataSub:'Telefon değiştirirken veya uygulamayı silmeden önce yedek kodunu kopyala, yeni cihazda yapıştır.',
-    backup:'Yedek kodunu kopyala', restorePh:'Yedek kodunu buraya yapıştır', restore:'Geri yükle', restored:'Geri yüklendi', restoreBad:'Bu kod okunamadı',
-    reset:'Her şeyi sil', resetConfirm:'Silmek için tekrar dokun', resetDone:'Tüm veriler silindi',
-    about:'Kaynaklar: ESHOT 568 tarifesi (15 Ekim 2026’da kontrol edildi), İzmir Metro sefer sıklıkları, İzmir Büyükşehir açık veri durak konumları ve canlı otobüs servisi. Tahminler tarifeyi, canlı konumu ve senin kaydettiğin yolculukları istatistiksel olarak birleştirir.'
+    today:'Bugün', tomorrow:'Yarın', hi:'Merhaba', settings:'Ayarlar',
+    forLecture:'{d} {t} dersi', change:'değiştir', otherTime:'Başka bir saat', customToday:'Bugün', customTomorrow:'Yarın', apply:'Bu saate göre planla', pickTitle:'Hangi ders?', close:'Kapat',
+    leave:'Evden çık', inM:'{m} dk sonra', inHM:'{h} sa {m} dk sonra', now:'Şimdi çık', run:'Hemen çık, hızlı yürü',
+    busAt:'568 durakta {t}', liveComing:'Canlı: {k} durak uzakta', liveAtStop:'Canlı: durakta', liveWait:'Canlı: son durakta bekliyor', liveNone:'Canlı: yaklaşan yok', liveOff:'Tarifeye göre',
+    arrive:'Bölüme varış {t}', onTime:'zamanında varma şansı',
+    board:'Otobüse bindim', arrived:'Bölüme vardım', cancel:'Vazgeç',
+    onWay:'Yoldasın', etaLabel:'Tahmini varış', lectureAt:'Ders {t}',
+    details:'Ayrıntılar', hide:'Gizle',
+    dJourney:'Yolculuk', dLeave:'Evden çık', dBus:'568, {stop}', dOff:'Bornova Metro’da in', dMetro:'Metro, 1 durak (her {h} dk)', dWalk:'{n} dk yürü', dDept:'Bölüm',
+    dOther:'Diğer otobüsler', dYou:'Senin verilerin', dNoTrips:'Henüz yolculuk yok. “Otobüse bindim” ve “Bölüme vardım” düğmelerine her bastığında tahminler sana göre düzelir.',
+    dStats:'{n} yolculuk · ortalama {a} dk · %{p} derse yetişti', dDelay:'568 durağına ortalama {v} dk {w} geliyor', early:'erken', lateW:'geç',
+    dMaps:'Google Haritalar’da aç', dStop:'ESHOT uygulaması için durak no {id}',
+    lateTitle:'Bu derse yetişmek zor', noBus:'Bu saatte uygun 568 seferi yok.', futureNote:'{d} için plan. Düğme o gün çıkar.',
+    savedOk:'Kaydedildi. Dersten {n} dk önce vardın.', savedLate:'Kaydedildi. {n} dk geç kaldın.', boarded:'İyi yolculuklar. Varınca dokun.',
+    setupTitle:'Hoş geldin', setupSub:'İki şey yeter: bindiğin durak ve ders saatlerin.', yourStop:'Bindiğin durak', yourLectures:'Ders saatlerin', start:'Başla',
+    addTime:'Saat', addDays:'Günler', add:'Ekle', pickDay:'Önce gün seç', noLectures:'Henüz ders yok.',
+    sLectures:'Derslerim', sTrip:'Yolculuk', sWalk:'Evden durağa (dk)', sWalk2:'İstasyondan bölüme (dk)', sBuffer:'Kaç dk erken orada ol', sName:'Adın (isteğe bağlı)', sLang:'Dil', sGeneral:'Genel',
+    sPrivacy:'Gizlilik', privacy:'Tüm bilgilerin yalnızca bu telefonda durur. Hesap, çerez veya takip yok. Canlı otobüs bilgisi için sadece durak numarası İzmir Büyükşehir’in açık veri servisine sorulur.',
+    sBackup:'Yedek', backup:'Yedek kodunu kopyala', restorePh:'Yedek kodunu yapıştır', restore:'Geri yükle', reset:'Her şeyi sil', resetConfirm:'Silmek için tekrar dokun',
+    copied:'Kopyalandı', copyFail:'Kopyalanamadı', restored:'Geri yüklendi', restoreBad:'Bu kod okunamadı', resetDone:'Silindi', back:'Geri', storeBad:'Bu tarayıcı verileri saklamıyor. Yedek kodunu not al.'
   },
   en: {
-    tabPlan:'Plan', tabLectures:'Lectures', tabStats:'Stats', tabSettings:'Settings',
-    gMorning:'Good morning', gDay:'Good afternoon', gEve:'Good evening', gNight:'Good night',
-    days:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
-    daysShort:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+    days:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'], daysShort:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
     months:['January','February','March','April','May','June','July','August','September','October','November','December'],
-    today:'Today', tomorrow:'Tomorrow', example:'Example lecture', otherTime:'Other time',
-    customFor:'Time you need to be there', customToday:'Today', customTomorrow:'Tomorrow', apply:'Plan it',
-    exampleNote:'This is an example. Add your timetable and the plan follows your next lecture every day.', addLectures:'Add your lectures',
-    leaveHome:'Leave home', inHM:'in {h} h {m} min', inM:'in {m} min', now:'Leave now', run:'Leave right now, walk fast', soon:'Get ready · {m} min',
-    busSignSub:'{t} · {stop}', busArrives:'The bus reaches your stop at {t}. Be there a minute early.', busArrivesLive:'From its live position, the bus reaches your stop around {t}.',
-    liveLoading:'Getting live bus data', liveDown:'Live data unavailable right now, using the timetable',
-    liveComing:'Live: 568 is {k} stops from yours, about {m} min', liveAtStop:'Live: 568 is at your stop now',
-    liveTerminal:'Live: 568 is waiting at the Evka 4 terminal', liveReturn:'Live: the next 568 is heading back to the terminal', liveNone:'Live: no 568 approaching right now',
-    liveAge:'{s} s ago', liveAgeMin:'{m} min ago',
-    arrive:'Arrive at the department', likely:'Most likely between {a} and {b}', onTime:'on time', ofLecture:'Lecture {t} · aiming {n} min early',
-    legLeave:'Leave home', legLeaveSub:'{n} min walk, {stop}',
-    legBus:'568 reaches the stop', legBusSub:'{stop} · stop no. {id}',
-    legOff:'Get off at Bornova Metro', legOffSub:'About {n} min on the bus',
-    legMetro:'Take the metro', legMetroSub:'A train every {h} min · 1 stop',
-    legUni:'Ege Üniversitesi station', legUniSub:'{n} min walk',
-    legDept:'Mechanical Engineering', legDeptSub:'Lecture {t}',
-    others:'Other buses', rec:'Recommended', live:'Live', lateTitle:'This lecture is hard to make', lateSub:'Earliest options below, with expected lateness.',
-    noBus:'No 568 trip fits this time', noBusSub:'Buses may not run then. Try another time.',
-    start:'I’m leaving now', startSub:'Log the trip so the predictions learn from you',
-    futureNote:'Plan for {d}. The trip button appears that day.',
-    liveTitle:'Check', liveMaps:'Open the route in Google Maps', liveEshot:'Your stop number for the ESHOT app', copy:'Copy', copied:'Copied', copyFail:'Could not copy, select the number manually',
-    onWay:'On your way', eta:'Expected arrival', etaFor:'for the {t} lecture', nextBus:'Next 568 at {t}', nextBusIn:'in {m} min',
-    stLeave:'Left home', stAtStop:'At the stop', stBoard:'On the 568', stOff:'Off at Bornova', stArrive:'At the department',
-    skip:'Skip this step', del:'Delete trip', delConfirm:'Tap again to delete', deleted:'Trip deleted',
-    saved:'Saved. Arrived {t}, {n} min before the lecture.', savedLate:'Saved. Arrived {t}, {n} min late.', savedPlain:'Saved, predictions updated.',
-    welcomeHi:'Welcome', welcomeSub:'Three steps and you are set. After that, just open the app: it tells you when to leave.',
-    w0:'Your name (optional, only for the greeting)', w1:'The stop you board at', w2:'Enter your weekly timetable once', ready:'Done',
-    lecTitle:'Your timetable', lecAdd:'Add a lecture', lecName:'Lecture name', lecNameH:'Optional', lecTime:'Start time', lecDays:'Days', lecAddBtn:'Add', lecPickDay:'Pick at least one day',
-    lecEmpty:'No lectures yet. Enter your timetable once; the app finds your next lecture every time you open it.', lecAdded:'Lecture added', lecNote:'The plan always targets your next lecture.', lecDel:'Delete',
-    stTitle:'Stats', tTrips:'trips logged', tAvg:'average door to desk', tOnTime:'made it on time',
-    sBus:'The 568 at your stop', sBusSub:'How far the bus runs from the timetable at your stop', sDelayYou:'Your average {v} min ({n} trips)', sDelayModel:'Model: usually 0 to 2 min late, occasionally more',
-    sRide:'Bus ride', sRideSub:'From your stop to Bornova Metro, minutes', thBand:'Time', thModel:'Model', thYou:'Yours',
-    bands:{early:'Before 07:00', am:'07:00 - 10:00', mid:'10:00 - 16:00', pm:'16:00 - 20:00', night:'After 20:00'},
-    sRest:'Metro and walk', sRestSub:'From getting off at Bornova to the department, minutes', sRestModel:'Model {v} min', sRestYou:'Your average {v} min ({n})',
-    sNow:'Current frequency', sNowBus:'568 every {n} min', sNowMetro:'Metro every {n} min', sNone:'no service',
-    sHist:'Door to desk times', sRecent:'Recent trips', sEmptyT:'Your personal stats build up here', sEmpty:'A few taps per trip is enough. After three trips the predictions follow your real times.',
-    min:'min',
-    setTitle:'Settings', setName:'Your name', setStop:'Stop you board at', setWalk:'Walk from home to the stop', setWalk2:'Ege Üniversitesi station to the department', setTransfer:'Bus to train change at Bornova', setBuffer:'Be there this many minutes early',
-    setConf:'Confidence', confHi:'Relaxed 95%', confMid:'Balanced 90%', confLo:'Tight 75%', setLang:'Language', unitMin:'minutes',
-    privTitle:'Privacy', privBody:'Your name, timetable and trips are stored only on this phone. Nothing is sent to any server, there is no account, no cookies and no tracking. For live bus info, only the stop number is sent to İzmir Metropolitan Municipality’s open data service.',
-    storeOk:'Saved permanently on this device', storeMaybe:'Saved on this device', storeBad:'This browser is not keeping data. Save your backup code somewhere.',
-    setData:'Backup', setDataSub:'Before switching phones or deleting the app, copy the backup code and paste it on the new device.',
-    backup:'Copy backup code', restorePh:'Paste a backup code here', restore:'Restore', restored:'Restored', restoreBad:'That code could not be read',
-    reset:'Delete everything', resetConfirm:'Tap again to delete', resetDone:'All data deleted',
-    about:'Sources: ESHOT line 568 timetable (checked 15 October 2026), İzmir Metro frequencies, İzmir open data stop locations and live bus service. Predictions combine the timetable, live positions and the trips you log, statistically.'
+    today:'Today', tomorrow:'Tomorrow', hi:'Hi', settings:'Settings',
+    forLecture:'{d} {t} lecture', change:'change', otherTime:'Another time', customToday:'Today', customTomorrow:'Tomorrow', apply:'Plan for this time', pickTitle:'Which lecture?', close:'Close',
+    leave:'Leave home', inM:'in {m} min', inHM:'in {h} h {m} min', now:'Leave now', run:'Leave right now, walk fast',
+    busAt:'568 at the stop {t}', liveComing:'Live: {k} stops away', liveAtStop:'Live: at the stop', liveWait:'Live: waiting at the terminal', liveNone:'Live: none approaching', liveOff:'From the timetable',
+    arrive:'Arrive {t}', onTime:'chance of being on time',
+    board:'I’m on the bus', arrived:'I’ve arrived', cancel:'Cancel',
+    onWay:'On your way', etaLabel:'Expected arrival', lectureAt:'Lecture {t}',
+    details:'Details', hide:'Hide',
+    dJourney:'Journey', dLeave:'Leave home', dBus:'568, {stop}', dOff:'Get off at Bornova Metro', dMetro:'Metro, 1 stop (every {h} min)', dWalk:'{n} min walk', dDept:'Department',
+    dOther:'Other buses', dYou:'Your data', dNoTrips:'No trips yet. Each time you tap “I’m on the bus” and “I’ve arrived”, the predictions adjust to you.',
+    dStats:'{n} trips · average {a} min · {p}% made it on time', dDelay:'The 568 reaches your stop {v} min {w} on average', early:'early', lateW:'late',
+    dMaps:'Open in Google Maps', dStop:'Stop no. {id} for the ESHOT app',
+    lateTitle:'This lecture is hard to make', noBus:'No 568 trip fits this time.', futureNote:'Plan for {d}. The button appears that day.',
+    savedOk:'Saved. You arrived {n} min before the lecture.', savedLate:'Saved. You were {n} min late.', boarded:'Have a good ride. Tap when you arrive.',
+    setupTitle:'Welcome', setupSub:'Two things are enough: your stop and your lecture times.', yourStop:'Your stop', yourLectures:'Your lecture times', start:'Start',
+    addTime:'Time', addDays:'Days', add:'Add', pickDay:'Pick a day first', noLectures:'No lectures yet.',
+    sLectures:'My lectures', sTrip:'Trip', sWalk:'Home to stop (min)', sWalk2:'Station to department (min)', sBuffer:'Arrive this many min early', sName:'Your name (optional)', sLang:'Language', sGeneral:'General',
+    sPrivacy:'Privacy', privacy:'All your information stays on this phone only. No account, cookies or tracking. For live bus info, only the stop number is sent to İzmir’s open data service.',
+    sBackup:'Backup', backup:'Copy backup code', restorePh:'Paste a backup code', restore:'Restore', reset:'Delete everything', resetConfirm:'Tap again to delete',
+    copied:'Copied', copyFail:'Could not copy', restored:'Restored', restoreBad:'That code could not be read', resetDone:'Deleted', back:'Back', storeBad:'This browser is not keeping data. Save your backup code.'
   }
 };
 
-/* ---------- Storage: on this device only (localStorage, mirrored to IndexedDB) ---------- */
+/* ---------- Storage: this device only (localStorage, mirrored to IndexedDB) ---------- */
 const KEY = 'derse-yetis-v1';
-const DEFAULTS = () => ({v:1, onboarded:false, savedAt:0, set:{name:'', lang:'tr', stopId:31370, walkToStop:4, walkFromMetro:12, transfer:3, buffer:5, conf:0.9}, lectures:[], trips:[], active:null});
-let storageOk = true, persisted = null;
+const DEFAULTS = () => ({v:1, onboarded:false, savedAt:0, set:{name:'', lang:'tr', stopId:31370, walkToStop:4, walkFromMetro:12, transfer:3, buffer:5}, lectures:[], trips:[], active:null});
+let storageOk = true;
 function normalize(s){
   const d = DEFAULTS();
   if (!s || typeof s !== 'object') return d;
-  return {v:1, onboarded:!!s.onboarded, savedAt:+s.savedAt || 0, set:Object.assign(d.set, s.set || {}), lectures:Array.isArray(s.lectures) ? s.lectures : [], trips:Array.isArray(s.trips) ? s.trips : [], active:s.active || null};
+  const set = Object.assign(d.set, s.set || {});
+  delete set.conf;
+  const active = s.active && s.active.t && s.active.t.board ? s.active : null;
+  return {v:1, onboarded:!!s.onboarded, savedAt:+s.savedAt || 0, set, lectures:Array.isArray(s.lectures) ? s.lectures : [], trips:Array.isArray(s.trips) ? s.trips : [], active};
 }
-function loadLocal(){
-  try { const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) : null; } catch (e) { storageOk = false; return null; }
-}
+function loadLocal(){ try { const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) : null; } catch (e) { storageOk = false; return null; } }
 const IDB = {
   p: null,
   open(){
     if (this.p) return this.p;
     this.p = new Promise(res => {
-      try {
-        const r = indexedDB.open('derse-yetis', 1);
-        r.onupgradeneeded = () => { try { r.result.createObjectStore('kv'); } catch (e) {} };
-        r.onsuccess = () => res(r.result);
-        r.onerror = () => res(null);
-        r.onblocked = () => res(null);
-      } catch (e) { res(null); }
+      try { const r = indexedDB.open('derse-yetis', 1); r.onupgradeneeded = () => { try { r.result.createObjectStore('kv'); } catch (e) {} }; r.onsuccess = () => res(r.result); r.onerror = () => res(null); r.onblocked = () => res(null); }
+      catch (e) { res(null); }
     });
     return this.p;
   },
-  async get(){
-    const db = await this.open(); if (!db) return null;
-    return new Promise(res => { try { const q = db.transaction('kv', 'readonly').objectStore('kv').get('state'); q.onsuccess = () => { try { res(q.result ? JSON.parse(q.result) : null); } catch (e) { res(null); } }; q.onerror = () => res(null); } catch (e) { res(null); } });
-  },
-  async set(str){
-    const db = await this.open(); if (!db) return;
-    try { db.transaction('kv', 'readwrite').objectStore('kv').put(str, 'state'); } catch (e) {}
-  },
-  async clear(){
-    const db = await this.open(); if (!db) return;
-    try { db.transaction('kv', 'readwrite').objectStore('kv').delete('state'); } catch (e) {}
-  }
+  async get(){ const db = await this.open(); if (!db) return null; return new Promise(res => { try { const q = db.transaction('kv', 'readonly').objectStore('kv').get('state'); q.onsuccess = () => { try { res(q.result ? JSON.parse(q.result) : null); } catch (e) { res(null); } }; q.onerror = () => res(null); } catch (e) { res(null); } }); },
+  async set(str){ const db = await this.open(); if (!db) return; try { db.transaction('kv', 'readwrite').objectStore('kv').put(str, 'state'); } catch (e) {} },
+  async clear(){ const db = await this.open(); if (!db) return; try { db.transaction('kv', 'readwrite').objectStore('kv').delete('state'); } catch (e) {} }
 };
 let S = normalize(loadLocal());
+let persistAsked = false;
 function save(){
   S.savedAt = Date.now();
   const str = JSON.stringify(S);
   try { localStorage.setItem(KEY, str); storageOk = true; } catch (e) { storageOk = false; }
   IDB.set(str);
-  askPersist();
+  if (!persistAsked){ persistAsked = true; try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {} }
 }
-function askPersist(){
-  if (persisted !== null) return;
-  try {
-    if (navigator.storage && navigator.storage.persist){
-      persisted = false;
-      navigator.storage.persisted().then(v => v || navigator.storage.persist()).then(v => { persisted = !!v; if (ui.tab === 'settings') renderSettings(); }).catch(() => {});
-    }
-  } catch (e) {}
-}
-// If localStorage was cleared but the IndexedDB copy survived (or is newer), restore it.
 IDB.get().then(copy => {
-  if (!copy) { if (S.savedAt) IDB.set(JSON.stringify(S)); return; }
+  if (!copy){ if (S.savedAt) IDB.set(JSON.stringify(S)); return; }
   const c = normalize(copy);
-  if ((c.savedAt || 0) > (S.savedAt || 0)){
-    S = c;
-    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
-    render();
-  }
+  if ((c.savedAt || 0) > (S.savedAt || 0)){ S = c; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} render(); }
 });
-if (S.savedAt) askPersist();
 
-const ui = {tab:'plan', targetKey:null, custom:null, showCustom:false, customDay:0, optK:null, delArm:0, resetArm:0, lecDays:[], lecTime:'', lecName:'', toastT:0};
+const ui = {view:'home', details:false, picking:false, custom:null, customDay:0, optK:null, lecDays:[], lecTime:'08:30', resetArm:0, toastT:0};
 
 /* ---------- Helpers ---------- */
 const $ = id => document.getElementById(id);
@@ -655,7 +452,7 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp
 function L(){ return DICT[S.set.lang] || DICT.tr; }
 function t(k, vars){ let s = L()[k]; if (s == null) s = DICT.tr[k] || k; if (vars) for (const v in vars) s = s.split('{' + v + '}').join(vars[v]); return s; }
 function pct(p){ const v = Math.round(p * 100); return S.set.lang === 'tr' ? '%' + v : v + '%'; }
-function dec(v){ return String(v).replace('.', S.set.lang === 'tr' ? ',' : '.'); }
+function dec(v){ return String(Math.round(v * 10) / 10).replace('.', S.set.lang === 'tr' ? ',' : '.'); }
 function hm(m){ m = Math.round(m); m = ((m % 1440) + 1440) % 1440; return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); }
 function minOfDay(d){ return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60; }
 function midnight(d){ const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
@@ -665,23 +462,19 @@ function sameDay(a, b){ return ymd(a) === ymd(b); }
 function dayLabel(d, now){ if (sameDay(d, now)) return t('today'); if (sameDay(d, addDays(now, 1))) return t('tomorrow'); return L().days[d.getDay()]; }
 function isoDow(d){ const x = d.getDay(); return x === 0 ? 7 : x; }
 function uid(){ return Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4); }
-function probClass(p){ return p >= S.set.conf ? 'ok' : p >= 0.6 ? 'warn' : 'bad'; }
-function durTxt(m){ m = Math.max(0, Math.round(m)); if (m >= 60) return t('inHM', {h: Math.floor(m / 60), m: m % 60}); return t('inM', {m}); }
+function probClass(p){ return p >= CONF ? 'ok' : p >= 0.6 ? 'warn' : 'bad'; }
 function toast(msg){ const el = $('toast'); el.textContent = msg; el.hidden = false; clearTimeout(ui.toastT); ui.toastT = setTimeout(() => { el.hidden = true; }, 3800); }
-function copyText(txt){
-  try { navigator.clipboard.writeText(txt).then(() => toast(t('copied')), () => toast(t('copyFail'))); }
-  catch (e) { toast(t('copyFail')); }
-}
+function copyText(txt){ try { navigator.clipboard.writeText(txt).then(() => toast(t('copied')), () => toast(t('copyFail'))); } catch (e) { toast(t('copyFail')); } }
+function isTyping(){ const a = document.activeElement; return !!(a && /INPUT|SELECT|TEXTAREA/.test(a.tagName)); }
 
-/* ---------- Live bus data (İzmir open data) ---------- */
+/* ---------- Live bus data ---------- */
 const LIVE = {status:'idle', buses:[], at:0, fails:0, pauseUntil:0, busy:false, stopId:null};
-const LIVE_URL = id => 'https://openapi.izmir.bel.tr/api/iztek/hattinyaklasanotobusleri/568/' + id;
 async function fetchLive(){
   if (LIVE.busy || Date.now() < LIVE.pauseUntil || !navigator.onLine) return;
   LIVE.busy = true;
   const stopId = S.set.stopId, ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 7000);
   try {
-    const res = await fetch(LIVE_URL(stopId), {signal: ctl.signal, cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer'});
+    const res = await fetch('https://openapi.izmir.bel.tr/api/iztek/hattinyaklasanotobusleri/568/' + stopId, {signal: ctl.signal, cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer'});
     if (!res.ok && res.status !== 204) throw new Error('http ' + res.status);
     const txt = res.status === 204 ? '' : await res.text();
     const data = txt ? JSON.parse(txt) : [];
@@ -693,34 +486,18 @@ async function fetchLive(){
     LIVE.fails++;
     if (!(LIVE.at && Date.now() - LIVE.at < 90000)) LIVE.status = 'down';
     if (LIVE.fails >= 3) LIVE.pauseUntil = Date.now() + 5 * 60000;
-  } finally {
-    clearTimeout(to); LIVE.busy = false;
-  }
-  if (!isTyping() && (ui.tab === 'plan')) renderPlan();
+  } finally { clearTimeout(to); LIVE.busy = false; }
+  if (ui.view === 'home' && !isTyping()) render();
 }
 function liveFresh(){ return LIVE.status === 'ok' && LIVE.stopId === S.set.stopId && Date.now() - LIVE.at < 150000; }
-function liveWanted(){
-  if (document.hidden) return false;
-  const now = new Date(), nowMin = minOfDay(now);
-  if (S.active) return !S.active.t.board;
-  if (ui.tab !== 'plan') return false;
-  if (!lastPlan || !lastPlan.isToday || !lastPlan.o) return false;
-  return lastPlan.o.leave - nowMin < 75;
-}
-function liveAge(){ const s = Math.max(0, Math.round((Date.now() - LIVE.at) / 1000)); return s < 90 ? t('liveAge', {s}) : t('liveAgeMin', {m: Math.round(s / 60)}); }
-function liveComing(){ if (!liveFresh()) return null; const elapsed = (Date.now() - LIVE.at) / 60000; const c = LIVE.buses.find(b => b.kind === 'coming'); return c ? Object.assign({}, c, {etaNow: Math.max(0, c.eta - elapsed)}) : null; }
-function liveLineHTML(){
-  if (LIVE.status === 'idle') return `<p class="live"><i class="ld off"></i><span class="muted">${esc(t('liveLoading'))}</span></p>`;
-  if (!liveFresh()) return `<p class="live"><i class="ld off"></i><span class="muted">${esc(t('liveDown'))}</span></p>`;
+function liveComing(){ if (!liveFresh()) return null; const el = (Date.now() - LIVE.at) / 60000; const c = LIVE.buses.find(b => b.kind === 'coming'); return c ? Object.assign({}, c, {etaNow: Math.max(0, c.eta - el)}) : null; }
+function liveText(){
+  if (!liveFresh()) return {txt: t('liveOff'), on: false};
   const c = liveComing();
-  let msg, cls = '';
-  if (c) msg = c.K === 0 ? t('liveAtStop') : t('liveComing', {k: c.K, m: Math.max(1, Math.round(c.etaNow))});
-  else if (LIVE.buses.some(b => b.kind === 'terminal')){ msg = t('liveTerminal'); cls = 'wait'; }
-  else if (LIVE.buses.some(b => b.kind === 'return')){ msg = t('liveReturn'); cls = 'wait'; }
-  else { msg = t('liveNone'); cls = 'wait'; }
-  return `<p class="live"><i class="ld ${cls}"></i><span><b>${esc(msg)}</b> <span class="age">· ${esc(liveAge())}</span></span></p>`;
+  if (c) return {txt: c.K === 0 ? t('liveAtStop') : t('liveComing', {k: c.K}), on: true};
+  if (LIVE.buses.some(b => b.kind === 'terminal')) return {txt: t('liveWait'), on: true};
+  return {txt: t('liveNone'), on: true};
 }
-// Snap a live, already departed bus onto the matching timetable option and recompute it.
 function applyLive(P, nowMin){
   const c = liveComing(); if (!c || !P.opts.length) return;
   const livePass = nowMin + c.etaNow;
@@ -728,10 +505,15 @@ function applyLive(P, nowMin){
   P.opts.forEach((o, i) => { const diff = livePass - o.pass; if (diff >= -6 && diff <= 15 && Math.abs(diff - 1) < bd){ bd = Math.abs(diff - 1); best = i; } });
   if (best < 0) return;
   const o = P.opts[best];
-  const sim = simBoard(P.M, P.dt, S.set.stopId, o.dep, livePass, seedOf('live', o.dep, Math.round(livePass * 2)));
-  Object.assign(o, summarize(sim.arr, P.deadline, P.L), {pass: livePass, leave: Math.floor(livePass - P.margin - P.wm), live: true});
+  Object.assign(o, summarize(simBoard(P.M, P.dt, S.set.stopId, o.dep, livePass, seedOf('live', o.dep, Math.round(livePass * 2))), P.deadline), {pass: livePass, leave: Math.floor(livePass - P.margin - P.wm), live: true});
   P.opts = P.opts.filter(x => x.leave >= nowMin - 2);
-  P.rec = pickRec(P.opts, S.set.conf);
+  P.rec = pickRec(P.opts);
+}
+let lastPlan = null;
+function liveWanted(){
+  if (document.hidden || ui.view !== 'home' || S.active) return false;
+  if (!lastPlan || !lastPlan.isToday || !lastPlan.o) return false;
+  return lastPlan.o.leave - minOfDay(new Date()) < 75;
 }
 
 /* ---------- Targets ---------- */
@@ -739,438 +521,243 @@ function upcoming(now){
   const out = [], nowMin = minOfDay(now);
   for (let o = 0; o < 8 && out.length < 6; o++){
     const d = addDays(midnight(now), o), dow = isoDow(d);
-    const list = S.lectures.filter(l => l.day === dow).map(l => ({l, m: T(l.time)})).sort((a, b) => a.m - b.m);
-    for (const x of list){ if (o === 0 && x.m <= nowMin) continue; out.push({key: ymd(d) + '|' + x.l.id, date: d, L: x.m, name: x.l.name || '', example: false}); }
+    const list = S.lectures.filter(l => l.day === dow).map(l => T(l.time)).sort((a, b) => a - b);
+    for (const m of list){ if (o === 0 && m <= nowMin) continue; out.push({key: ymd(d) + '|' + m, date: d, L: m}); }
   }
   return out;
-}
-function exampleTarget(now){
-  let d = midnight(now); const nowMin = minOfDay(now);
-  if (d.getDay() === 0 || d.getDay() === 6 || nowMin > 8 * 60){ do { d = addDays(d, 1); } while (d.getDay() === 0 || d.getDay() === 6); }
-  return {key: 'example', date: d, L: 9 * 60 + 30, name: t('example'), example: true};
 }
 function currentTarget(now){
   if (ui.custom) return ui.custom;
   const ups = upcoming(now);
-  if (!ups.length) return exampleTarget(now);
-  return ups.find(u => u.key === ui.targetKey) || ups[0];
+  return ups.find(u => u.key === ui.targetKey) || ups[0] || null;
 }
 
-/* ---------- Render: Plan ---------- */
-function stopOptions(withId){ return STOPS.map(s => `<option value="${s.id}"${s.id === S.set.stopId ? ' selected' : ''}>${esc(s.n)}${withId ? ' · ' + s.id : ''}</option>`).join(''); }
-function welcomeCard(){
-  return `<div class="card welcome"><h2>${esc(t('welcomeHi'))}</h2><p class="muted">${esc(t('welcomeSub'))}</p>
-  <ol>
-    <li><label class="f" for="w-name">${esc(t('w0'))}<input id="w-name" type="text" maxlength="30" autocomplete="given-name" value="${esc(S.set.name)}" data-set="name"></label></li>
-    <li><label class="f" for="w-stop">${esc(t('w1'))}<select id="w-stop" data-set="stopId">${stopOptions(false)}</select></label></li>
-    <li><div class="row spread"><span style="font-weight:600">${esc(t('w2'))}</span><button class="btn" data-act="goLectures">${esc(t('addLectures'))}</button></div></li>
-  </ol>
-  <div class="row" style="margin-top:14px;justify-content:flex-end"><button class="primary" style="min-height:48px" data-act="onboarded">${esc(t('ready'))}</button></div></div>`;
+/* ---------- Views ---------- */
+function lectureEditor(){
+  const ds = L().daysShort;
+  const dayBtns = [1, 2, 3, 4, 5, 6, 7].map(d => `<button data-act="lecDay" data-d="${d}" aria-pressed="${ui.lecDays.includes(d)}">${esc(ds[d % 7])}</button>`).join('');
+  let list = '';
+  for (const d of [1, 2, 3, 4, 5, 6, 7]){
+    const times = S.lectures.filter(l => l.day === d).sort((a, b) => T(a.time) - T(b.time));
+    for (const l of times) list += `<div class="lec"><div><span>${esc(L().days[d % 7])}</span><b>${esc(l.time)}</b></div><button class="x" data-act="lecDel" data-id="${esc(l.id)}" aria-label="${esc(L().days[d % 7])} ${esc(l.time)}">&times;</button></div>`;
+  }
+  return `<div class="box">
+    <div class="addrow"><label class="f" for="l-time">${esc(t('addTime'))}<input id="l-time" type="time" value="${esc(ui.lecTime)}"></label><button class="btn solid" data-act="lecAdd">${esc(t('add'))}</button></div>
+    <div><span class="vh">${esc(t('addDays'))}</span><div class="days" role="group" aria-label="${esc(t('addDays'))}">${dayBtns}</div></div>
+    ${list ? `<div>${list}</div>` : `<p class="small muted" style="margin:0">${esc(t('noLectures'))}</p>`}
+  </div>`;
 }
-function targetRow(now, tgt){
-  const ups = upcoming(now);
+function stopSelect(id){ return `<select id="${id}" data-set="stopId">${STOPS.map(s => `<option value="${s.id}"${s.id === S.set.stopId ? ' selected' : ''}>${esc(s.n)}</option>`).join('')}</select>`; }
+
+function setupView(){
+  return `<div class="section"><h2>${esc(t('setupTitle'))}</h2><p class="muted" style="margin:0">${esc(t('setupSub'))}</p></div>
+    <div class="section"><h3>${esc(t('yourStop'))}</h3><label class="vh" for="w-stop">${esc(t('yourStop'))}</label>${stopSelect('w-stop')}</div>
+    <div class="section"><h3>${esc(t('yourLectures'))}</h3>${lectureEditor()}</div>
+    <button class="primary" data-act="start"${S.lectures.length ? '' : ' disabled style="opacity:.45"'}>${esc(t('start'))}</button>`;
+}
+
+function pickerView(now){
+  const ups = upcoming(now), cur = currentTarget(now);
+  const rows = ups.map(u => `<button class="row" data-act="target" data-key="${esc(u.key)}" aria-pressed="${!ui.custom && cur && u.key === cur.key}"><span>${esc(dayLabel(u.date, now))}</span><b>${hm(u.L)}</b></button>`).join('');
+  return `<div class="section"><h2>${esc(t('pickTitle'))}</h2></div>
+    ${rows ? `<div class="list">${rows}</div>` : ''}
+    <div class="section"><h3>${esc(t('otherTime'))}</h3><div class="box">
+      <label class="vh" for="c-time">${esc(t('otherTime'))}</label><input id="c-time" type="time" value="${ui.custom ? hm(ui.custom.L) : '10:30'}">
+      <div class="seg" role="group"><button data-act="cday" data-v="0" aria-pressed="${ui.customDay === 0}">${esc(t('customToday'))}</button><button data-act="cday" data-v="1" aria-pressed="${ui.customDay === 1}">${esc(t('customTomorrow'))}</button></div>
+      <button class="btn solid" data-act="applyCustom">${esc(t('apply'))}</button></div></div>
+    <button class="quiet" data-act="closePick">${esc(t('close'))}</button>`;
+}
+
+function tripView(now){
+  const a = S.active, M = buildModel(S), boardMin = (a.t.board - a.base) / 60000;
+  const dep = a.dep != null ? a.dep : 480;
+  const s = summarize(simBoard(M, a.dt, a.stopId, dep, boardMin, seedOf('trip', a.t.board)), a.L - a.buffer);
+  return `<section class="hero"><p class="label">${esc(t('onWay'))} · ${esc(t('etaLabel'))}</p><p class="time">${hm(s.q50)}</p>
+      <p class="count ${s.p >= CONF ? 'calm' : s.p >= 0.6 ? 'soon' : 'now'}">${pct(s.p)} · ${esc(t('lectureAt', {t: hm(a.L)}))}</p></section>
+    <button class="primary" data-act="arrived">${esc(t('arrived'))}</button>
+    <button class="quiet" data-act="cancelTrip">${esc(t('cancel'))}</button>`;
+}
+
+function detailsHTML(o, P, tgt){
+  const stop = stopById(S.set.stopId), f = frac(S.set.stopId), b = band(o.dep);
+  const ratio = ratioMed(P.M, b);
+  const ride = FULL_RIDE[b] * DAYF[P.dt] * f * ratio;
+  const off = o.pass + 0.5 + ride, tr = S.set.transfer * ratio;
+  const h = headwayAt(P.dt, off + tr) || 10;
+  const uni = off + tr + h / 2 + 2.5;
   let chips = '';
-  if (!ups.length) chips += `<button class="tchip" aria-pressed="${ui.custom ? 'false' : 'true'}" data-act="target" data-key="example"><b class="num">${hm(570)}</b><span>${esc(t('example'))}</span></button>`;
-  for (const u of ups){
-    const sel = !ui.custom && u.key === tgt.key;
-    chips += `<button class="tchip" aria-pressed="${sel}" data-act="target" data-key="${esc(u.key)}"><b class="num">${hm(u.L)}</b><span>${esc(dayLabel(u.date, now))}${u.name ? ' · ' + esc(u.name) : ''}</span></button>`;
+  if (P.opts.length > 1){
+    const lo = Math.max(0, P.rec - 1), hi = Math.min(P.opts.length, lo + 4);
+    for (let i = lo; i < hi; i++){ const x = P.opts[i]; chips += `<button class="chip" data-act="opt" data-k="${x.k}" aria-pressed="${x === o}"><b>${hm(x.leave)}</b><span class="${probClass(x.p)}">${pct(x.p)}</span></button>`; }
   }
-  chips += `<button class="tchip ghost" aria-pressed="${ui.custom ? 'true' : 'false'}" data-act="toggleCustom"><b>+</b><span>${esc(t('otherTime'))}</span></button>`;
-  let custom = '';
-  if (ui.showCustom){
-    custom = `<div class="card stack"><label class="f" for="c-time">${esc(t('customFor'))}<input id="c-time" type="time" value="${ui.custom ? hm(ui.custom.L) : '10:30'}"></label>
-    <div class="seg" role="group"><button data-act="cday" data-v="0" aria-pressed="${ui.customDay === 0}">${esc(t('customToday'))}</button><button data-act="cday" data-v="1" aria-pressed="${ui.customDay === 1}">${esc(t('customTomorrow'))}</button></div>
-    <button class="btn" data-act="applyCustom">${esc(t('apply'))}</button></div>`;
+  const trips = S.trips, done = trips.filter(x => x.t && x.t.board && x.t.arrive);
+  const withL = trips.filter(x => x.t && x.t.arrive && x.L != null), onTime = withL.filter(x => (x.t.arrive - x.base) / 60000 <= x.L).length;
+  const dl = P.M.obs.delay;
+  let you;
+  if (!trips.length) you = `<p class="muted">${esc(t('dNoTrips'))}</p>`;
+  else {
+    const avg = done.length ? Math.round(mean(done.map(x => (x.t.arrive - x.t.board) / 60000)) + S.set.walkToStop + 1.5) : '--';
+    you = `<p>${esc(t('dStats', {n: trips.length, a: avg, p: withL.length ? Math.round(onTime / withL.length * 100) : '--'}))}</p>`;
+    if (dl.length){ const m = mean(dl); you += `<p>${esc(t('dDelay', {v: dec(Math.abs(m)), w: m < 0 ? t('early') : t('lateW')}))}</p>`; }
   }
-  return `<div class="targets" role="group" aria-label="${esc(t('tabLectures'))}">${chips}</div>${custom}`;
+  const url = 'https://www.google.com/maps/dir/?api=1&origin=' + stop.la + ',' + stop.lo + '&destination=' + encodeURIComponent('Ege Üniversitesi Makine Mühendisliği Bölümü, Bornova') + '&travelmode=transit';
+  return `<div class="details">
+    <h3>${esc(t('dJourney'))}</h3>
+    <ol class="steps">
+      <li><time>${hm(o.leave)}</time><span>${esc(t('dLeave'))}</span></li>
+      <li><time>${hm(o.pass)}</time><span>${esc(t('dBus', {stop: stop.n}))}</span></li>
+      <li><time>${hm(off)}</time><span>${esc(t('dOff'))}</span></li>
+      <li><time>${hm(off + tr + h / 2)}</time><span>${esc(t('dMetro', {h: dec(h)}))}</span></li>
+      <li><time>${hm(uni)}</time><span>${esc(t('dWalk', {n: S.set.walkFromMetro}))}</span></li>
+      <li><time>${hm(o.q50)}</time><span>${esc(t('dDept'))}</span></li>
+    </ol>
+    ${chips ? `<h3>${esc(t('dOther'))}</h3><div class="chips">${chips}</div>` : ''}
+    <h3>${esc(t('dYou'))}</h3>${you}
+    <p><a class="link" href="${url}" target="_blank" rel="noopener noreferrer">${esc(t('dMaps'))}</a></p>
+    <p class="small muted">${esc(t('dStop', {id: stop.id}))}</p>
+  </div>`;
 }
-function heroHTML(o, tgt, now, isToday){
-  const nowMin = minOfDay(now);
-  let state, pill, fuse = 0;
-  if (!isToday){ state = 'future'; pill = esc(dayLabel(tgt.date, now)); }
+
+function homeView(now){
+  if (!S.onboarded || !S.lectures.length && !ui.custom) return setupView();
+  if (ui.picking) return pickerView(now);
+  if (S.active) return tripView(now);
+  const tgt = currentTarget(now);
+  if (!tgt) return setupView();
+  const nowMin = minOfDay(now), isToday = sameDay(tgt.date, now);
+  const P = planFor(S, dayTypeOf(tgt.date), tgt.L, isToday ? nowMin : null);
+  if (isToday) applyLive(P, nowMin);
+  const targetBtn = `<button class="target" data-act="pick">${esc(t('forLecture', {d: dayLabel(tgt.date, now), t: hm(tgt.L)}))} <span>${esc(t('change'))}</span></button>`;
+  if (!P.opts.length){ lastPlan = {P, tgt, isToday, o: null}; return targetBtn + `<p class="note" style="text-align:left">${esc(t('noBus'))}</p>`; }
+  let sel = P.rec;
+  if (ui.optK != null){ const i = P.opts.findIndex(x => x.k === ui.optK); if (i >= 0) sel = i; }
+  const o = P.opts[sel];
+  lastPlan = {P, tgt, isToday, o};
+  let cls, txt;
+  if (!isToday){ cls = 'future'; txt = dayLabel(tgt.date, now); }
   else {
     const m = o.leave - nowMin;
-    if (m > 10){ state = 'calm'; pill = esc(durTxt(m)); }
-    else if (m > 3){ state = 'soon'; pill = esc(t('soon', {m: Math.round(m)})); }
-    else if (m > -0.5){ state = 'now'; pill = esc(t('now')); }
-    else { state = 'run'; pill = esc(t('run')); }
-    fuse = Math.max(0, Math.min(1, m / 60));
+    if (m > 10){ cls = 'calm'; txt = m >= 60 ? t('inHM', {h: Math.floor(m / 60), m: Math.round(m % 60)}) : t('inM', {m: Math.round(m)}); }
+    else if (m > 2){ cls = 'soon'; txt = t('inM', {m: Math.round(m)}); }
+    else if (m > -0.5){ cls = 'now'; txt = t('now'); }
+    else { cls = 'now'; txt = t('run'); }
   }
-  const stop = stopById(S.set.stopId);
-  const signStop = stop.n.toLocaleUpperCase('tr-TR');
-  return `<div class="card hero" data-s="${state}">
-    <div class="hero-top"><div><p class="leave-label">${esc(t('leaveHome'))}</p><p class="leave-time num">${hm(o.leave)}</p></div>
-    <span class="pill ${state}"><span class="dot"></span><span>${pill}</span></span></div>
-    ${isToday ? `<div class="fuse ${state}" aria-hidden="true"><i style="width:${(fuse * 100).toFixed(1)}%"></i></div>` : ''}
-    <div class="sign" role="img" aria-label="568 Bornova Metro, ${hm(o.pass)}, ${esc(stop.n)}">
-      <div class="sign-num">568</div>
-      <div class="sign-dest"><b>BORNOVA METRO</b><small>${esc(t('busSignSub', {t: hm(o.pass), stop: signStop}))}</small></div>
+  const live = isToday ? liveText() : null, stop = stopById(S.set.stopId);
+  return `${targetBtn}
+    ${P.late ? `<p class="note" style="text-align:left;color:var(--bad);font-weight:600">${esc(t('lateTitle'))}</p>` : ''}
+    <section class="hero"><p class="label">${esc(t('leave'))}</p><p class="time">${hm(o.leave)}</p><p class="count ${cls}">${esc(txt)}</p></section>
+    <div class="facts">
+      <div class="fact"><span class="led">568</span><div class="k"><b>${esc(t('busAt', {t: hm(o.pass)}))}</b><span>${esc(stop.n)}${live ? ` · <span class="live${live.on ? '' : ' off'}"><i></i>${esc(live.txt)}</span>` : ''}</span></div></div>
+      <div class="fact"><span class="pin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18M5 21V8l7-4 7 4v13M9 21v-6h6v6"/></svg></span><div class="k"><b>${esc(t('arrive', {t: hm(o.q50)}))}</b><span>${esc(t('onTime'))}</span></div><span class="v ${probClass(o.p)}">${pct(o.p)}</span></div>
     </div>
-    ${isToday ? liveLineHTML() : ''}
-    <p class="small muted" style="margin:0">${esc(o.live ? t('busArrivesLive', {t: hm(o.pass)}) : t('busArrives', {t: hm(o.pass)}))}</p>
-  </div>`;
-}
-function arrivalHTML(o, tgt){
-  return `<div class="card arrival">
-    <p class="eyebrow">${esc(t('arrive'))}</p><p class="eyebrow" style="text-align:right">${esc(t('onTime'))}</p>
-    <div class="big">${o.q50 === Infinity ? '--:--' : hm(o.q50)}</div><div class="prob ${probClass(o.p)}">${pct(o.p)}</div>
-    <p class="small muted" style="grid-column:1/-1">${esc(t('likely', {a: hm(o.q10), b: o.q90 === Infinity ? '?' : hm(o.q90)}))}</p>
-    <p class="small muted" style="grid-column:1/-1">${esc(t('ofLecture', {t: hm(tgt.L), n: S.set.buffer}))}</p>
-  </div>`;
-}
-function timelineHTML(o, P, tgt){
-  const stop = stopById(S.set.stopId), f = frac(S.set.stopId);
-  const ride = rideMedFull(P.M, band(o.dep), P.dt) * f;
-  const off = o.pass + 0.5 + ride;
-  const h = headwayAt(P.dt, off + S.set.transfer) || 10;
-  const board = off + S.set.transfer + h / 2;
-  const uni = board + 2.5;
-  return `<div class="card"><ol class="tl">
-    <li><time>${hm(o.leave)}</time><span class="mk"></span><div class="tx"><b>${esc(t('legLeave'))}</b><span>${esc(t('legLeaveSub', {n: Math.round(P.wm), stop: stop.n}))}</span></div></li>
-    <li><time>${hm(o.pass)}</time><span class="mk bus"></span><div class="tx"><b>${esc(t('legBus'))}</b><span>${esc(t('legBusSub', {stop: stop.n, id: stop.id}))}</span></div></li>
-    <li><time>${hm(off)}</time><span class="mk bus"></span><div class="tx"><b>${esc(t('legOff'))}</b><span>${esc(t('legOffSub', {n: Math.round(ride)}))}</span></div></li>
-    <li><time>${hm(board)}</time><span class="mk metro"></span><div class="tx"><b>${esc(t('legMetro'))}</b><span>${esc(t('legMetroSub', {h: dec(h)}))}</span></div></li>
-    <li><time>${hm(uni)}</time><span class="mk metro"></span><div class="tx"><b>${esc(t('legUni'))}</b><span>${esc(t('legUniSub', {n: Math.round(S.set.walkFromMetro)}))}</span></div></li>
-    <li><time>${o.q50 === Infinity ? '--:--' : hm(o.q50)}</time><span class="mk end"></span><div class="tx"><b>${esc(t('legDept'))}</b><span>${esc(t('legDeptSub', {t: hm(tgt.L)}))}</span></div></li>
-  </ol></div>`;
-}
-function optionsHTML(P, sel){
-  if (P.opts.length < 2) return '';
-  const lo = Math.max(0, P.rec - 2), hi = Math.min(P.opts.length, lo + 4);
-  let h = '';
-  for (let i = lo; i < hi; i++){
-    const o = P.opts[i];
-    const tag = i === P.rec ? t('rec') : o.live ? t('live') : '568';
-    h += `<button class="opt" aria-pressed="${i === sel}" data-act="opt" data-k="${o.k}"><small>${esc(tag)}</small><b>${hm(o.pass)}</b><span class="p ${probClass(o.p)}">${pct(o.p)}</span></button>`;
-  }
-  return `<div class="stack" style="gap:8px"><p class="eyebrow">${esc(t('others'))}</p><div class="opts">${h}</div></div>`;
-}
-function checksHTML(){
-  const s = stopById(S.set.stopId);
-  const url = 'https://www.google.com/maps/dir/?api=1&origin=' + s.la + ',' + s.lo + '&destination=' + encodeURIComponent('Ege Üniversitesi Makine Mühendisliği Bölümü, Bornova') + '&travelmode=transit';
-  return `<div class="card checks"><p class="eyebrow">${esc(t('liveTitle'))}</p>
-    <a class="link" href="${url}" target="_blank" rel="noopener noreferrer">${esc(t('liveMaps'))}</a>
-    <div class="row spread"><div><div class="small muted">${esc(t('liveEshot'))}</div><div class="code num">${s.id}</div></div><button class="btn" data-act="copyStop">${esc(t('copy'))}</button></div></div>`;
+    ${isToday ? `<button class="primary" data-act="board">${esc(t('board'))}</button>` : `<p class="note">${esc(t('futureNote', {d: dayLabel(tgt.date, now)}))}</p>`}
+    <button class="quiet" data-act="details" aria-expanded="${ui.details}">${esc(ui.details ? t('hide') : t('details'))}</button>
+    ${ui.details ? detailsHTML(o, P, tgt) : ''}`;
 }
 
-const STEPS = ['leave', 'atStop', 'board', 'offBus', 'arrive'];
-const STEP_LABEL = {leave:'stLeave', atStop:'stAtStop', board:'stBoard', offBus:'stOff', arrive:'stArrive'};
-function nextStep(a){
-  let last = -1; STEPS.forEach((s, i) => { if (a.t[s] || (a.skipped || []).includes(s)) last = i; });
-  return STEPS[last + 1] || null;
-}
-function tripPredict(a, now){
-  const M = buildModel(S), dt = a.dt, base = a.base, toMin = ms => (ms - base) / 60000, nowMin = (now.getTime() - base) / 60000, x = a.t;
-  let sim, waitInfo = null;
-  if (x.offBus) sim = simOff(M, dt, toMin(x.offBus), seedOf('off', x.offBus));
-  else if (x.board){ const dep = a.dep != null ? a.dep : (inferBus(dt, a.stopId, toMin(x.board)) || {dep: 480}).dep; sim = simBoard(M, dt, a.stopId, dep, toMin(x.board), seedOf('b', x.board)); }
-  else {
-    const reach = x.atStop ? toMin(x.atStop) : (x.leave ? toMin(x.leave) + walkMed(M) : nowMin + walkMed(M));
-    const tStop = Math.max(reach, nowMin);
-    const c = a.stopId === S.set.stopId ? liveComing() : null;
-    if (c && nowMin + c.etaNow >= tStop - 0.5){
-      const livePass = nowMin + c.etaNow;
-      const inf = inferBus(dt, a.stopId, livePass) || {dep: 480};
-      sim = simBoard(M, dt, a.stopId, inf.dep, livePass, seedOf('lw', a.id, Math.round(livePass * 2)));
-      waitInfo = {pass: livePass, nowMin};
-    } else {
-      const deps = TT[dt]; let k0 = deps.findIndex(d => passMed(d, a.stopId, dt) >= tStop - 3);
-      if (k0 < 0) k0 = deps.length - 1;
-      sim = simLeave(M, dt, a.stopId, 0, k0, seedOf('w', a.id, k0, Math.floor(nowMin)), tStop);
-      const nb = deps.findIndex(d => passMed(d, a.stopId, dt) >= nowMin - 2);
-      if (nb >= 0) waitInfo = {pass: passMed(deps[nb], a.stopId, dt), nowMin};
-    }
-  }
-  return {s: summarize(sim.arr, a.L - a.buffer, a.L), waitInfo};
-}
-function trackerHTML(now){
-  const a = S.active, pr = tripPredict(a, now), ns = nextStep(a), s = pr.s;
-  let steps = '';
-  for (const st of STEPS){
-    const done = a.t[st], skipped = (a.skipped || []).includes(st);
-    const cls = done ? 'done' : skipped ? 'skip' : st === ns ? 'cur' : '';
-    steps += `<li class="${cls}"><b>${esc(t(STEP_LABEL[st]))}</b><span class="num">${done ? hm(minOfDay(new Date(done))) : ''}</span></li>`;
-  }
-  const wait = pr.waitInfo ? `<p class="small" style="margin:0"><b>${esc(t('nextBus', {t: hm(pr.waitInfo.pass)}))}</b> <span class="muted">${esc(t('nextBusIn', {m: Math.max(0, Math.round(pr.waitInfo.pass - pr.waitInfo.nowMin))}))}</span></p>` : '';
-  return `<div class="card hero">
-    <p class="leave-label">${esc(t('onWay'))} · ${esc(t('etaFor', {t: hm(a.L)}))}</p>
-    <div class="hero-top"><div><p class="leave-label" style="letter-spacing:.04em">${esc(t('eta'))}</p><p class="leave-time num">${s.q50 === Infinity ? '--:--' : hm(s.q50)}</p></div>
-    <div class="prob ${probClass(s.p)}">${pct(s.p)}<div class="small muted" style="font-family:var(--f-body);font-weight:500">${esc(t('onTime'))}</div></div></div>
-    ${!a.t.board ? liveLineHTML() : ''}
-    ${wait}
-    <ol class="steps">${steps}</ol>
-    ${ns ? `<button class="primary" data-act="step">${esc(t(STEP_LABEL[ns]))}</button>` : ''}
-    <div class="row spread">${ns && ns !== 'arrive' ? `<button class="btn quiet" data-act="skip">${esc(t('skip'))}</button>` : '<span></span>'}<button class="btn quiet danger" data-act="delTrip">${esc(ui.delArm > Date.now() ? t('delConfirm') : t('del'))}</button></div>
-  </div>`;
-}
-
-let lastPlan = null;
-function renderPlan(){
-  const now = new Date(), nowMin = minOfDay(now);
-  let h = '';
-  if (!S.onboarded) h += welcomeCard();
-  if (S.active){
-    h += trackerHTML(now);
-  } else {
-    const tgt = currentTarget(now);
-    const isToday = sameDay(tgt.date, now);
-    h += targetRow(now, tgt);
-    if (tgt.example) h += `<div class="card row spread"><span class="small muted" style="flex:1;min-width:0">${esc(t('exampleNote'))}</span><button class="btn" data-act="goLectures">${esc(t('addLectures'))}</button></div>`;
-    const P = planFor(S, dayTypeOf(tgt.date), tgt.L, isToday ? nowMin : null);
-    if (isToday) applyLive(P, nowMin);
-    if (!P.opts.length){
-      lastPlan = {P, tgt, isToday, o: null};
-      h += `<div class="card"><h2>${esc(t('noBus'))}</h2><p class="muted" style="margin:6px 0 0">${esc(t('noBusSub'))}</p></div>`;
-    } else {
-      let sel = P.rec;
-      if (ui.optK != null){ const i = P.opts.findIndex(o => o.k === ui.optK); if (i >= 0) sel = i; }
-      const o = P.opts[sel];
-      lastPlan = {P, tgt, isToday, o};
-      if (P.late) h += `<div class="card" style="border-color:var(--bad)"><h2>${esc(t('lateTitle'))}</h2><p class="muted" style="margin:6px 0 0">${esc(t('lateSub'))}</p></div>`;
-      h += heroHTML(o, tgt, now, isToday);
-      h += arrivalHTML(o, tgt);
-      h += timelineHTML(o, P, tgt);
-      h += optionsHTML(P, sel);
-      if (isToday) h += `<button class="primary" data-act="startTrip" data-k="${o.k}"><span>${esc(t('start'))}</span><small>${esc(t('startSub'))}</small></button>`;
-      else h += `<p class="small muted" style="margin:0">${esc(t('futureNote', {d: dayLabel(tgt.date, now)}))}</p>`;
-    }
-  }
-  h += checksHTML();
-  $('tab-plan').innerHTML = h;
-}
-
-/* ---------- Render: Lectures ---------- */
-function renderLectures(){
-  const ds = L().daysShort, order = [1, 2, 3, 4, 5, 6, 7];
-  const dayBtns = order.map(d => `<button data-act="lecDay" data-d="${d}" aria-pressed="${ui.lecDays.includes(d)}">${esc(ds[d % 7])}</button>`).join('');
-  let list = '';
-  for (const d of order){
-    const items = S.lectures.filter(l => l.day === d).sort((a, b) => T(a.time) - T(b.time));
-    if (!items.length) continue;
-    list += `<div class="dayblock"><h3>${esc(L().days[d % 7])}</h3>${items.map(l => `<div class="lec"><b>${esc(l.time)}</b><span>${esc(l.name || '')}</span><button class="x" data-act="lecDel" data-id="${esc(l.id)}" aria-label="${esc(t('lecDel'))} ${esc(l.time)}">&times;</button></div>`).join('')}</div>`;
-  }
-  $('tab-lectures').innerHTML = `
-    <h2>${esc(t('lecTitle'))}</h2>
-    <div class="card stack">
-      <p class="eyebrow">${esc(t('lecAdd'))}</p>
-      <div class="grid2">
-        <label class="f" for="l-time">${esc(t('lecTime'))}<input id="l-time" type="time" value="${esc(ui.lecTime || '08:30')}"></label>
-        <label class="f" for="l-name">${esc(t('lecName'))}<input id="l-name" type="text" maxlength="40" placeholder="${esc(t('lecNameH'))}" value="${esc(ui.lecName || '')}"></label>
-      </div>
-      <div class="stack" style="gap:6px"><span class="small" style="font-weight:600">${esc(t('lecDays'))}</span><div class="days" role="group">${dayBtns}</div></div>
-      <button class="primary" data-act="lecAdd" style="min-height:48px">${esc(t('lecAddBtn'))}</button>
-    </div>
-    ${list ? `<div class="card stack">${list}</div><p class="small muted" style="margin:0">${esc(t('lecNote'))}</p>` : `<div class="empty">${esc(t('lecEmpty'))}</div>`}`;
-}
-
-/* ---------- Render: Stats ---------- */
-function histSVG(vals){
-  const lo = Math.floor(Math.min(...vals) / 2) * 2, hiV = Math.ceil(Math.max(...vals) / 2) * 2 + 2;
-  const bins = []; for (let b = lo; b < hiV; b += 2) bins.push({b, n: 0});
-  for (const v of vals){ const i = Math.min(bins.length - 1, Math.floor((v - lo) / 2)); bins[i].n++; }
-  const W = 320, H = 120, padB = 22, maxN = Math.max(...bins.map(b => b.n)), bw = W / bins.length;
-  let g = '';
-  bins.forEach((b, i) => { const h = maxN ? (b.n / maxN) * (H - padB - 8) : 0; g += `<rect x="${(i * bw + 2).toFixed(1)}" y="${(H - padB - h).toFixed(1)}" width="${Math.max(2, bw - 4).toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="var(--accent)"/>`; });
-  const step = Math.max(1, Math.ceil(bins.length / 6));
-  bins.forEach((b, i) => { if (i % step === 0) g += `<text x="${(i * bw + bw / 2).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="Overpass, sans-serif">${b.b}</text>`; });
-  g += `<line x1="0" y1="${H - padB}" x2="${W}" y2="${H - padB}" stroke="var(--line)"/>`;
-  return `<svg class="hist" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(t('sHist'))}">${g}</svg>`;
-}
-function renderStats(){
-  const now = new Date(), dtNow = dayTypeOf(now), nowMin = minOfDay(now);
-  const M = buildModel(S), f = frac(S.set.stopId), trips = S.trips;
-  const totals = trips.filter(x => x.t.leave && x.t.arrive).map(x => (x.t.arrive - x.t.leave) / 60000);
-  const withTarget = trips.filter(x => x.t.arrive && x.L != null);
-  const onTime = withTarget.filter(x => (x.t.arrive - x.base) / 60000 <= x.L).length;
-  const fmt1 = v => v == null ? '--' : dec(Math.round(v * 10) / 10);
-  const tiles = `<div class="tiles">
-    <div class="tile"><b>${trips.length}</b><span>${esc(t('tTrips'))}</span></div>
-    <div class="tile"><b>${totals.length ? Math.round(mean(totals)) : '--'}</b><span>${esc(t('tAvg'))} (${esc(t('min'))})</span></div>
-    <div class="tile"><b>${withTarget.length ? pct(onTime / withTarget.length) : '--'}</b><span>${esc(t('tOnTime'))}</span></div></div>`;
-  const bh = busHeadwayAt(dtNow, nowMin), mh = headwayAt(dtNow, nowMin);
-  const nowCard = `<div class="card"><p class="eyebrow">${esc(t('sNow'))}</p><p style="margin:4px 0 0;font-weight:600">${bh ? esc(t('sNowBus', {n: bh})) : '568 ' + esc(t('sNone'))} · ${mh ? esc(t('sNowMetro', {n: dec(mh)})) : 'Metro ' + esc(t('sNone'))}</p></div>`;
-  const dl = M.obs.delay;
-  const busCard = `<div class="card stack" style="gap:6px"><h2>${esc(t('sBus'))}</h2><p class="small muted" style="margin:0">${esc(t('sBusSub'))}</p>
-    <p style="margin:4px 0 0;font-weight:600">${dl.length ? esc(t('sDelayYou', {v: (mean(dl) >= 0 ? '+' : '') + fmt1(mean(dl)), n: dl.length})) : esc(t('sDelayModel'))}</p></div>`;
-  let rows = '';
-  for (const b of BANDS){
-    const o = M.obs.ride[b];
-    rows += `<tr><td>${esc(L().bands[b])}</td><td class="n">${Math.round(FULL_RIDE[b] * f)}</td><td class="n">${o.length ? fmt1(mean(o) * f) + ' <span class="muted small">(' + o.length + ')</span>' : '--'}</td></tr>`;
-  }
-  const rideCard = `<div class="card stack" style="gap:6px"><h2>${esc(t('sRide'))}</h2><p class="small muted" style="margin:0">${esc(t('sRideSub'))}</p>
-    <div class="tbl-wrap"><table><thead><tr><th>${esc(t('thBand'))}</th><th class="n">${esc(t('thModel'))}</th><th class="n">${esc(t('thYou'))}</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
-  const restModel = S.set.transfer + 2.5 + 2.5 + S.set.walkFromMetro;
-  const ro = M.obs.rest;
-  const restCard = `<div class="card stack" style="gap:6px"><h2>${esc(t('sRest'))}</h2><p class="small muted" style="margin:0">${esc(t('sRestSub'))}</p>
-    <p style="margin:4px 0 0;font-weight:600">${esc(t('sRestModel', {v: fmt1(restModel)}))}${ro.length ? ' · ' + esc(t('sRestYou', {v: fmt1(mean(ro)), n: ro.length})) : ''}</p></div>`;
-  const histCard = totals.length >= 3
-    ? `<div class="card stack" style="gap:8px"><h2>${esc(t('sHist'))}</h2>${histSVG(totals)}<p class="small muted" style="margin:0">${esc(t('min'))}</p></div>`
-    : `<div class="empty"><b>${esc(t('sEmptyT'))}</b>${esc(t('sEmpty'))}</div>`;
-  let recent = '';
-  const last = trips.slice(-8).reverse();
-  if (last.length){
-    recent = `<div class="card stack" style="gap:6px"><h2>${esc(t('sRecent'))}</h2><div class="tbl-wrap"><table><tbody>${last.map(x => {
-      const d = new Date(x.base);
-      const tot = x.t.leave && x.t.arrive ? Math.round((x.t.arrive - x.t.leave) / 60000) + ' ' + t('min') : '--';
-      const ok = x.t.arrive && x.L != null ? ((x.t.arrive - x.base) / 60000 <= x.L ? '<span style="color:var(--ok)">&#10003;</span>' : '<span style="color:var(--bad)">&#215;</span>') : '';
-      return `<tr><td>${esc(L().daysShort[d.getDay()])} ${d.getDate()} ${esc(L().months[d.getMonth()].slice(0, 3))}</td><td class="n">${x.dep != null ? hm(passMed(x.dep, x.stopId, x.dt)) : '--'}</td><td class="n">${esc(tot)}</td><td class="n">${ok}</td></tr>`;
-    }).join('')}</tbody></table></div></div>`;
-  }
-  $('tab-stats').innerHTML = `<h2>${esc(t('stTitle'))}</h2>${tiles}${nowCard}${histCard}${busCard}${rideCard}${restCard}${recent}`;
-}
-
-/* ---------- Render: Settings ---------- */
-function numField(id, key, label, minV, maxV){
-  return `<label class="f" for="${id}">${esc(label)}<input id="${id}" type="number" inputmode="numeric" min="${minV}" max="${maxV}" step="1" value="${S.set[key]}" data-set="${key}"><span class="h">${esc(t('unitMin'))}</span></label>`;
-}
-function renderSettings(){
-  const c = S.set.conf;
-  const store = !storageOk ? `<span style="color:var(--bad)">${esc(t('storeBad'))}</span>` : esc(persisted ? t('storeOk') : t('storeMaybe'));
-  $('tab-settings').innerHTML = `
-    <h2>${esc(t('setTitle'))}</h2>
-    <div class="card stack">
-      <label class="f" for="s-name">${esc(t('setName'))}<input id="s-name" type="text" maxlength="30" autocomplete="given-name" value="${esc(S.set.name)}" data-set="name"></label>
-      <label class="f" for="s-stop">${esc(t('setStop'))}<select id="s-stop" data-set="stopId">${stopOptions(true)}</select></label>
-      <div class="grid2">${numField('s-walk', 'walkToStop', t('setWalk'), 0, 30)}${numField('s-walk2', 'walkFromMetro', t('setWalk2'), 2, 40)}</div>
-      <div class="grid2">${numField('s-transfer', 'transfer', t('setTransfer'), 1, 15)}${numField('s-buffer', 'buffer', t('setBuffer'), 0, 30)}</div>
-      <div class="stack" style="gap:6px"><span class="small" style="font-weight:600">${esc(t('setConf'))}</span>
-        <div class="seg" role="group"><button data-act="conf" data-v="0.95" aria-pressed="${c === 0.95}">${esc(t('confHi'))}</button><button data-act="conf" data-v="0.9" aria-pressed="${c === 0.9}">${esc(t('confMid'))}</button><button data-act="conf" data-v="0.75" aria-pressed="${c === 0.75}">${esc(t('confLo'))}</button></div></div>
-      <div class="stack" style="gap:6px"><span class="small" style="font-weight:600">${esc(t('setLang'))}</span>
-        <div class="seg" role="group"><button data-act="lang" data-v="tr" aria-pressed="${S.set.lang === 'tr'}">Türkçe</button><button data-act="lang" data-v="en" aria-pressed="${S.set.lang === 'en'}">English</button></div></div>
-    </div>
-    <div class="card stack" style="gap:10px">
-      <div class="privacy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-      <div><h2 style="font-size:20px">${esc(t('privTitle'))}</h2><p class="small" style="margin:6px 0 0">${esc(t('privBody'))}</p><p class="small" style="margin:8px 0 0;font-weight:600">${store}</p></div></div>
-    </div>
-    <div class="card stack">
-      <h2>${esc(t('setData'))}</h2>
-      <p class="small muted" style="margin:0">${esc(t('setDataSub'))}</p>
+function settingsView(){
+  const num = (id, key, label, min, max) => `<label class="f" for="${id}">${esc(label)}<input id="${id}" type="number" inputmode="numeric" min="${min}" max="${max}" step="1" value="${S.set[key]}" data-set="${key}"></label>`;
+  return `<button class="back" data-act="home">&larr; ${esc(t('back'))}</button>
+    <h2>${esc(t('settings'))}</h2>
+    <div class="section"><h3>${esc(t('sLectures'))}</h3>${lectureEditor()}</div>
+    <div class="section"><h3>${esc(t('sTrip'))}</h3><div class="box">
+      <label class="f" for="s-stop">${esc(t('yourStop'))}${stopSelect('s-stop')}</label>
+      <div class="grid2">${num('s-walk', 'walkToStop', t('sWalk'), 0, 30)}${num('s-walk2', 'walkFromMetro', t('sWalk2'), 2, 40)}</div>
+      ${num('s-buffer', 'buffer', t('sBuffer'), 0, 30)}
+    </div></div>
+    <div class="section"><h3>${esc(t('sGeneral'))}</h3><div class="box">
+      <label class="f" for="s-name">${esc(t('sName'))}<input id="s-name" type="text" maxlength="30" autocomplete="off" value="${esc(S.set.name)}" data-set="name"></label>
+      <div class="seg" role="group"><button data-act="lang" data-v="tr" aria-pressed="${S.set.lang === 'tr'}">Türkçe</button><button data-act="lang" data-v="en" aria-pressed="${S.set.lang === 'en'}">English</button></div>
+    </div></div>
+    <div class="section"><h3>${esc(t('sPrivacy'))}</h3><p class="small" style="margin:0">${esc(t('privacy'))}</p>${storageOk ? '' : `<p class="small" style="margin:0;color:var(--bad)">${esc(t('storeBad'))}</p>`}</div>
+    <div class="section"><h3>${esc(t('sBackup'))}</h3><div class="box">
       <button class="btn" data-act="backup">${esc(t('backup'))}</button>
-      <label for="s-restore"><span class="vh">${esc(t('restorePh'))}</span><textarea id="s-restore" placeholder="${esc(t('restorePh'))}"></textarea></label>
-      <div class="row spread"><button class="btn" data-act="restore">${esc(t('restore'))}</button><button class="btn danger" data-act="reset">${esc(ui.resetArm > Date.now() ? t('resetConfirm') : t('reset'))}</button></div>
-    </div>
-    <p class="foot">${esc(t('about'))}</p>`;
+      <label class="vh" for="s-restore">${esc(t('restorePh'))}</label><textarea id="s-restore" placeholder="${esc(t('restorePh'))}"></textarea>
+      <div class="grid2"><button class="btn" data-act="restore">${esc(t('restore'))}</button><button class="btn danger" data-act="reset">${esc(ui.resetArm > Date.now() ? t('resetConfirm') : t('reset'))}</button></div>
+    </div></div>`;
 }
 
-/* ---------- Shell ---------- */
-function renderHeader(){
-  const now = new Date(), h = now.getHours();
-  const g = h >= 5 && h < 12 ? 'gMorning' : h >= 12 && h < 18 ? 'gDay' : h >= 18 && h < 22 ? 'gEve' : 'gNight';
-  $('greet').textContent = t(g) + (S.set.name ? ', ' + S.set.name : '');
-  const Lx = L();
-  $('dateline').textContent = `${Lx.days[now.getDay()]}, ${now.getDate()} ${Lx.months[now.getMonth()]}`;
-  document.documentElement.lang = S.set.lang;
-  document.querySelectorAll('[data-i]').forEach(el => { el.textContent = t(el.getAttribute('data-i')); });
-}
 function render(){
-  renderHeader();
-  for (const name of ['plan', 'lectures', 'stats', 'settings']){
-    $('tab-' + name).hidden = ui.tab !== name;
-    $('tb-' + name).setAttribute('aria-selected', String(ui.tab === name));
-  }
-  if (ui.tab === 'plan') renderPlan();
-  else if (ui.tab === 'lectures') renderLectures();
-  else if (ui.tab === 'stats') renderStats();
-  else renderSettings();
+  const now = new Date(), Lx = L();
+  document.documentElement.lang = S.set.lang;
+  $('dateline').innerHTML = `<b>${esc(S.set.name ? t('hi') + ', ' + S.set.name : Lx.days[now.getDay()])}</b> · ${now.getDate()} ${esc(Lx.months[now.getMonth()])}`;
+  $('gear').hidden = ui.view === 'settings';
+  $('gear').setAttribute('aria-label', t('settings'));
+  $('view').innerHTML = ui.view === 'settings' ? settingsView() : homeView(now);
 }
-function setTab(name){ ui.tab = name; render(); window.scrollTo(0, 0); maybeLive(); }
-function isTyping(){ const a = document.activeElement; return !!(a && /INPUT|SELECT|TEXTAREA/.test(a.tagName)); }
+function go(view){ ui.view = view; ui.picking = false; render(); window.scrollTo(0, 0); maybeLive(true); }
 
-/* ---------- Trip logging ---------- */
-function startTrip(k){
-  const now = new Date(), tgt = lastPlan ? lastPlan.tgt : currentTarget(now), base = midnight(now).getTime(), dt = dayTypeOf(now);
-  S.active = {id: uid(), base, dt, stopId: S.set.stopId, L: tgt.L, buffer: S.set.buffer, plannedDep: k != null && TT[dt][k] != null ? TT[dt][k] : null, t: {leave: Date.now()}, skipped: [], startedAt: Date.now()};
-  save(); render(); maybeLive(true);
+/* ---------- Actions ---------- */
+function addLecture(){
+  const time = $('l-time').value; if (!time) return;
+  if (!ui.lecDays.length){ toast(t('pickDay')); return; }
+  for (const d of ui.lecDays) if (!S.lectures.some(l => l.day === d && l.time === time)) S.lectures.push({id: uid(), day: d, time});
+  ui.lecDays = []; ui.lecTime = time; save(); render();
 }
-function finishTrip(){
+function board(){
+  const now = new Date(), tgt = lastPlan ? lastPlan.tgt : currentTarget(now), base = midnight(now).getTime(), dt = dayTypeOf(now), stopId = S.set.stopId;
+  const inf = inferBus(dt, stopId, minOfDay(now));
+  S.active = {id: uid(), base, dt, stopId, L: tgt ? tgt.L : minOfDay(now) + 60, buffer: S.set.buffer, dep: inf ? inf.dep : null, delay: inf ? inf.delay : null, t: {board: Date.now()}};
+  save(); render(); toast(t('boarded'));
+}
+function arrive(){
   const a = S.active; if (!a) return;
-  const rec = {id: a.id, base: a.base, dt: a.dt, stopId: a.stopId, L: a.L, buffer: a.buffer, t: a.t, dep: a.dep != null ? a.dep : null, delay: a.delay != null ? a.delay : null};
-  S.trips.push(rec); if (S.trips.length > 300) S.trips = S.trips.slice(-300);
+  a.t.arrive = Date.now();
+  S.trips.push({id: a.id, base: a.base, dt: a.dt, stopId: a.stopId, L: a.L, buffer: a.buffer, dep: a.dep, delay: a.delay, t: a.t});
+  if (S.trips.length > 300) S.trips = S.trips.slice(-300);
   S.active = null; ui.optK = null; save();
-  if (a.t.arrive){
-    const arrMin = (a.t.arrive - a.base) / 60000, diff = Math.round(a.L - arrMin);
-    toast(diff >= 0 ? t('saved', {t: hm(arrMin), n: diff}) : t('savedLate', {t: hm(arrMin), n: -diff}));
-  } else toast(t('savedPlain'));
-}
-function step(){
-  const a = S.active; if (!a) return;
-  const ns = nextStep(a); if (!ns) return;
-  a.t[ns] = Date.now();
-  if (ns === 'board'){
-    const inf = inferBus(a.dt, a.stopId, (a.t.board - a.base) / 60000);
-    if (inf){ a.dep = inf.dep; a.delay = inf.delay; }
-  }
-  if (ns === 'arrive') finishTrip(); else save();
+  const diff = Math.round(a.L - (a.t.arrive - a.base) / 60000);
+  toast(diff >= 0 ? t('savedOk', {n: diff}) : t('savedLate', {n: -diff}));
   render();
 }
 function expireStale(){
   const a = S.active; if (!a) return;
-  if (Date.now() - a.startedAt > 4 * 3600 * 1000){
-    if (a.t.board || a.t.atStop) finishTrip(); else { S.active = null; save(); }
+  if (Date.now() - a.t.board > 3 * 3600 * 1000){
+    S.trips.push({id: a.id, base: a.base, dt: a.dt, stopId: a.stopId, L: a.L, buffer: a.buffer, dep: a.dep, delay: a.delay, t: a.t});
+    S.active = null; save();
   }
 }
-
-/* ---------- Events ---------- */
 document.addEventListener('click', e => {
-  const tabBtn = e.target.closest('[data-tab]');
-  if (tabBtn){ setTab(tabBtn.getAttribute('data-tab')); return; }
-  const b = e.target.closest('[data-act]'); if (!b) return;
+  const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
   const act = b.getAttribute('data-act');
   switch (act){
-    case 'target': ui.custom = null; ui.showCustom = false; ui.targetKey = b.getAttribute('data-key'); ui.optK = null; render(); maybeLive(); break;
-    case 'toggleCustom': ui.showCustom = !ui.showCustom; if (!ui.showCustom) ui.custom = null; ui.optK = null; render(); break;
-    case 'cday': ui.customDay = +b.getAttribute('data-v'); render(); break;
+    case 'settings': go('settings'); break;
+    case 'home': go('home'); break;
+    case 'start': if (S.lectures.length){ S.onboarded = true; save(); render(); maybeLive(true); } break;
+    case 'lecDay': { const d = +b.getAttribute('data-d'); ui.lecTime = $('l-time').value || ui.lecTime; ui.lecDays = ui.lecDays.includes(d) ? ui.lecDays.filter(x => x !== d) : ui.lecDays.concat(d); render(); break; }
+    case 'lecAdd': addLecture(); break;
+    case 'lecDel': S.lectures = S.lectures.filter(l => l.id !== b.getAttribute('data-id')); save(); render(); break;
+    case 'pick': ui.picking = true; render(); window.scrollTo(0, 0); break;
+    case 'closePick': ui.picking = false; render(); break;
+    case 'target': ui.custom = null; ui.targetKey = b.getAttribute('data-key'); ui.picking = false; ui.optK = null; render(); maybeLive(true); break;
+    case 'cday': ui.customDay = +b.getAttribute('data-v'); { const v = $('c-time').value; render(); if (v) $('c-time').value = v; } break;
     case 'applyCustom': {
       const v = $('c-time').value; if (!v) return;
-      const d = addDays(midnight(new Date()), ui.customDay || 0), m = T(v);
-      ui.custom = {key: 'custom', date: d, L: m >= 1440 ? m - 1440 : m, name: '', example: false}; ui.optK = null; render(); maybeLive(); break;
+      const m = T(v);
+      ui.custom = {key: 'custom', date: addDays(midnight(new Date()), ui.customDay), L: m >= 1440 ? m - 1440 : m};
+      ui.picking = false; ui.optK = null; render(); maybeLive(true); break;
     }
     case 'opt': ui.optK = +b.getAttribute('data-k'); render(); break;
-    case 'startTrip': startTrip(+b.getAttribute('data-k')); break;
-    case 'step': step(); break;
-    case 'skip': { const a = S.active, ns = a && nextStep(a); if (ns && ns !== 'arrive'){ a.skipped = (a.skipped || []).concat(ns); save(); render(); } break; }
-    case 'delTrip':
-      if (ui.delArm > Date.now()){ S.active = null; ui.delArm = 0; save(); toast(t('deleted')); render(); }
-      else { ui.delArm = Date.now() + 4000; render(); setTimeout(() => { if (ui.tab === 'plan') render(); }, 4100); }
-      break;
-    case 'copyStop': copyText(String(S.set.stopId)); break;
-    case 'goLectures': setTab('lectures'); break;
-    case 'onboarded': {
-      const n = $('w-name'); if (n) S.set.name = n.value.trim().slice(0, 30);
-      S.onboarded = true; save(); render(); break;
-    }
-    case 'lecDay': { const d = +b.getAttribute('data-d'); ui.lecTime = $('l-time').value; ui.lecName = $('l-name').value; ui.lecDays = ui.lecDays.includes(d) ? ui.lecDays.filter(x => x !== d) : ui.lecDays.concat(d); renderLectures(); break; }
-    case 'lecAdd': {
-      const time = $('l-time').value, name = $('l-name').value.trim();
-      if (!time) return;
-      if (!ui.lecDays.length){ toast(t('lecPickDay')); return; }
-      for (const d of ui.lecDays) S.lectures.push({id: uid(), day: d, time, name});
-      ui.lecDays = []; ui.lecName = ''; ui.lecTime = time; save(); toast(t('lecAdded')); renderLectures(); break;
-    }
-    case 'lecDel': S.lectures = S.lectures.filter(l => l.id !== b.getAttribute('data-id')); save(); renderLectures(); break;
-    case 'conf': S.set.conf = +b.getAttribute('data-v'); save(); renderSettings(); break;
+    case 'details': ui.details = !ui.details; render(); break;
+    case 'board': board(); break;
+    case 'arrived': arrive(); break;
+    case 'cancelTrip': S.active = null; save(); render(); break;
     case 'lang': S.set.lang = b.getAttribute('data-v'); save(); render(); break;
     case 'backup': {
-      let code = '';
-      try { code = btoa(unescape(encodeURIComponent(JSON.stringify(S)))); } catch (err) { code = ''; }
-      const ta = $('s-restore'); if (ta) ta.value = code;
-      copyText(code); break;
+      let code = ''; try { code = btoa(unescape(encodeURIComponent(JSON.stringify(S)))); } catch (err) {}
+      $('s-restore').value = code; copyText(code); break;
     }
     case 'restore': {
-      const v = ($('s-restore').value || '').trim();
       try {
-        const obj = JSON.parse(decodeURIComponent(escape(atob(v))));
+        const obj = JSON.parse(decodeURIComponent(escape(atob(($('s-restore').value || '').trim()))));
         if (!obj || typeof obj !== 'object' || !obj.set) throw new Error('bad');
         S = normalize(obj); S.onboarded = true; save(); toast(t('restored')); render();
       } catch (err) { toast(t('restoreBad')); }
       break;
     }
     case 'reset':
-      if (ui.resetArm > Date.now()){
-        S = DEFAULTS(); ui.resetArm = 0;
-        try { localStorage.removeItem(KEY); } catch (err) {}
-        IDB.clear(); toast(t('resetDone')); render();
-      } else { ui.resetArm = Date.now() + 4000; renderSettings(); setTimeout(() => { if (ui.tab === 'settings') renderSettings(); }, 4100); }
+      if (ui.resetArm > Date.now()){ S = DEFAULTS(); ui.resetArm = 0; try { localStorage.removeItem(KEY); } catch (err) {} IDB.clear(); toast(t('resetDone')); go('home'); }
+      else { ui.resetArm = Date.now() + 4000; render(); setTimeout(() => { if (ui.view === 'settings' && !isTyping()) render(); }, 4100); }
       break;
   }
 });
@@ -1182,21 +769,16 @@ document.addEventListener('change', e => {
   else if (key === 'name') v = String(v).trim().slice(0, 30);
   else v = Math.max(0, Math.min(60, Math.round(+v || 0)));
   S.set[key] = v; save();
-  if (key === 'name') renderHeader();
-  if (ui.tab === 'plan' && !isTyping()) renderPlan();
-  if (key === 'stopId') maybeLive(true);
+  if (key === 'name') render();
 });
 
 /* ---------- Clock and live polling ---------- */
 let lastMinute = -1, lastLive = 0;
-function maybeLive(force){
-  if (!liveWanted()) return;
-  if (force || Date.now() - lastLive > 25000){ lastLive = Date.now(); fetchLive(); }
-}
+function maybeLive(force){ if (!liveWanted()) return; if (force || Date.now() - lastLive > 25000){ lastLive = Date.now(); fetchLive(); } }
 function tick(){
   expireStale();
   const now = new Date(), m = now.getHours() * 60 + now.getMinutes();
-  if (m !== lastMinute && !isTyping()){ lastMinute = m; if (ui.tab === 'plan' || ui.tab === 'stats') render(); else renderHeader(); }
+  if (m !== lastMinute && !isTyping() && ui.view === 'home'){ lastMinute = m; render(); }
   maybeLive();
 }
 render();
@@ -1205,7 +787,6 @@ maybeLive(true);
 setInterval(tick, 5000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden){ lastMinute = -1; tick(); maybeLive(true); } });
 
-/* ---------- Offline support ---------- */
 if ('serviceWorker' in navigator && location.protocol === 'https:'){
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
 }
