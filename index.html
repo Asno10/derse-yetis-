@@ -164,6 +164,21 @@ textarea{min-height:72px;resize:vertical;font-size:13px;font-family:ui-monospace
 .small{font-size:14px}
 .muted{color:var(--muted)}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.lines{display:flex;flex-direction:column;gap:8px}
+.linechip{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:10px 12px}
+.linechip .led{font-size:18px;padding:7px 8px 5px}
+.linechip span.t{flex:1;min-width:0;font-size:15px;line-height:1.3}
+.linechip span.t small{display:block;font-size:13px;color:var(--muted)}
+.linechip .tick{flex-shrink:0;width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;color:transparent}
+.linechip .tick svg{width:14px;height:14px}
+.linechip[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.linechip[aria-pressed="true"] .tick{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.hint{margin:0;font-size:14px;color:var(--muted)}
+.chip small{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--muted)}
+.which{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center}
+.which span{font-size:14px;color:var(--muted)}
+.which button{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 10px;font-weight:700;font-variant-numeric:tabular-nums}
+.which button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:6;width:max-content;max-width:min(400px,calc(100% - 32px));background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:14px;font-size:15px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -185,37 +200,79 @@ textarea{min-height:72px;resize:vertical;font-size:13px;font-family:ui-monospace
 'use strict';
 
 /* MODEL START */
-// ESHOT line 568 (Evka 4 - Bornova Metro), departures from Evka 4 terminal. Checked 15 Oct 2026.
+// ESHOT lines from Evka 4 to Bornova Metro. Departures from the Evka 4 terminal: ESHOT open data, 16 Oct 2026.
+// Stops in route order, d = metres from the terminal along the official route geometry; len = terminal to Bornova Metro.
 const T = s => { const p = s.split(':'); let v = (+p[0]) * 60 + (+p[1]); if (v < 180) v += 1440; return v; };
-const parseList = s => s.trim().split(/\s+/).map(T);
-const TT = {
-  wd: parseList('05:55 06:20 06:40 06:54 07:08 07:22 07:36 07:50 08:04 08:18 08:32 08:46 09:00 09:16 09:32 09:48 10:04 10:20 10:36 10:52 11:08 11:24 11:40 11:56 12:12 12:28 12:44 13:00 13:16 13:30 13:44 13:58 14:12 14:26 14:40 14:54 15:08 15:22 15:36 15:50 16:04 16:18 16:32 16:46 17:00 17:14 17:27 17:41 17:51 18:01 18:12 18:26 18:40 18:52 19:08 19:22 19:36 19:50 20:05 20:18 20:45 21:15 21:45 22:15 22:45 23:15 23:40 00:15'),
-  sat: parseList('06:00 06:20 06:35 06:50 07:05 07:20 07:35 07:50 08:05 08:20 08:35 08:50 09:10 09:30 09:50 10:09 10:25 10:40 10:55 11:10 11:25 11:40 11:50 12:06 12:22 12:39 12:55 13:12 13:28 13:45 14:01 14:18 14:34 14:51 15:07 15:24 15:40 15:57 16:13 16:30 16:46 17:00 17:14 17:29 17:43 17:58 18:12 18:26 18:41 18:55 19:10 19:24 19:42 20:00 20:18 20:36 20:54 21:15 21:45 22:15 22:45 23:15 23:40 00:15'),
-  sun: parseList('06:00 06:30 07:00 07:30 08:00 08:30 09:00 09:25 09:47 10:10 10:27 10:44 11:01 11:18 11:32 11:46 12:02 12:15 12:29 12:44 12:58 13:12 13:27 13:41 13:55 14:10 14:24 14:38 14:53 15:07 15:21 15:36 15:50 16:04 16:19 16:33 16:47 17:02 17:16 17:30 17:45 17:59 18:13 18:28 18:42 18:56 19:11 19:25 19:45 20:15 20:45 21:15 21:45 22:15 22:45 23:15 23:45 00:15')
+const parseList = s => s.trim() ? s.trim().split(/\s+/).map(T) : [];
+const LINES = {
+  '565': {len: 6351, via: {tr: 'Beşyol ve İnönü üzerinden', en: 'via Beşyol and İnönü'},
+    tt: {wd: parseList('06:00 06:10 06:20 06:21 06:30 06:40 06:46 06:52 06:56 06:58 07:05 07:11 07:17 07:24 07:31 07:32 07:38 07:45 07:52 07:59 08:05 08:06 08:13 08:20 08:26 08:32 08:38 08:44 08:52 09:00 09:08 09:16 09:24 09:32 09:40 09:48 09:56 10:04 10:12 10:20 10:28 10:36 10:44 10:52 11:00 11:08 11:16 11:24 11:32 11:40 11:48 11:56 12:04 12:12 12:20 12:28 12:36 12:44 12:52 13:00 13:08 13:16 13:24 13:32 13:40 13:48 13:56 14:04 14:12 14:20 14:28 14:36 14:44 14:52 15:00 15:08 15:16 15:24 15:32 15:40 15:48 15:56 16:04 16:12 16:20 16:28 16:36 16:44 16:52 17:00 17:08 17:16 17:23 17:30 17:37 17:44 17:51 17:58 18:05 18:12 18:19 18:26 18:33 18:40 18:47 18:54 19:01 19:08 19:15 19:25 19:35 19:45 19:55 20:05 20:15 20:25 20:35 20:45 20:55 21:05 21:15 21:25 21:35 21:45 21:55 22:05 22:15 22:25 22:35 22:45 23:00 23:15 23:30 23:45 00:00 00:21'), sat: parseList('06:00 06:15 06:30 06:40 06:47 06:55 07:02 07:10 07:17 07:25 07:32 07:40 07:47 07:55 08:02 08:10 08:17 08:25 08:32 08:40 08:50 09:00 09:10 09:20 09:30 09:40 09:50 10:00 10:10 10:20 10:30 10:40 10:50 11:00 11:10 11:20 11:30 11:40 11:50 12:00 12:10 12:20 12:29 12:38 12:47 12:56 13:05 13:14 13:23 13:32 13:41 13:50 13:59 14:08 14:17 14:26 14:35 14:44 14:53 15:02 15:11 15:20 15:29 15:38 15:47 15:56 16:05 16:14 16:23 16:32 16:41 16:50 16:58 17:05 17:13 17:20 17:28 17:35 17:43 17:50 17:58 18:05 18:13 18:20 18:28 18:35 18:43 18:50 18:58 19:05 19:13 19:20 19:30 19:40 19:50 20:00 20:10 20:20 20:30 20:40 20:50 21:00 21:10 21:20 21:30 21:40 21:50 22:00 22:15 22:30 22:40 23:00 23:15 23:30 23:45 00:10 00:30'), sun: parseList('06:00 06:14 06:26 06:38 06:50 07:02 07:14 07:26 07:38 07:50 08:02 08:14 08:26 08:38 08:50 09:02 09:14 09:26 09:38 09:50 10:02 10:14 10:26 10:35 10:44 10:53 11:02 11:11 11:20 11:29 11:38 11:47 11:56 12:05 12:14 12:23 12:32 12:41 12:50 12:59 13:08 13:17 13:26 13:35 13:44 13:53 14:02 14:11 14:20 14:29 14:38 14:47 14:56 15:05 15:14 15:23 15:32 15:41 15:50 15:59 16:08 16:17 16:26 16:35 16:44 16:53 17:02 17:11 17:20 17:29 17:38 17:47 17:56 18:05 18:14 18:23 18:32 18:41 18:50 18:59 19:08 19:17 19:28 19:36 19:55 20:10 20:25 20:40 20:55 21:10 21:25 21:40 21:55 22:10 22:25 22:40 22:55 23:10 23:25 23:40 23:55 00:10 00:30')},
+    stops: [
+      {id:31370, n:'Evka 4 Son Durak', d:17, la:38.49504, lo:27.21397},
+      {id:31368, n:'Evka-4 Anaokulu', d:243, la:38.49360, lo:27.21280},
+      {id:31366, n:'Mehmet Akif Cami', d:472, la:38.49190, lo:27.21370},
+      {id:31364, n:'Evka 4 Muhtarlık', d:741, la:38.49030, lo:27.21490},
+      {id:31362, n:'Yeditepe İtfaiye', d:963, la:38.48832, lo:27.21429},
+      {id:31360, n:'Depo', d:1232, la:38.48784, lo:27.21643},
+      {id:31358, n:'Nedim Dağtaş', d:1589, la:38.48517, lo:27.21793},
+      {id:31356, n:'Beşyol', d:2068, la:38.48188, lo:27.21655},
+      {id:31354, n:'Ardıç', d:2446, la:38.48008, lo:27.21390},
+      {id:31352, n:'Yıldıztepe', d:2635, la:38.47858, lo:27.21276},
+      {id:31350, n:'İnönü', d:2974, la:38.47677, lo:27.21483}]},
+  '566': {len: 5471, via: {tr: 'Gayrettepe üzerinden, yalnızca hafta içi', en: 'via Gayrettepe, weekdays only'},
+    tt: {wd: parseList('06:05 06:20 06:42 07:04 07:26 07:48 08:10 08:32 16:30 17:00 17:30 18:00 18:30 19:00'), sat: parseList(''), sun: parseList('')},
+    stops: [
+      {id:31370, n:'Evka 4 Son Durak', d:17, la:38.49504, lo:27.21397},
+      {id:31368, n:'Evka-4 Anaokulu', d:243, la:38.49360, lo:27.21280},
+      {id:31366, n:'Mehmet Akif Cami', d:472, la:38.49190, lo:27.21370},
+      {id:31364, n:'Evka 4 Muhtarlık', d:741, la:38.49030, lo:27.21490},
+      {id:31362, n:'Yeditepe İtfaiye', d:963, la:38.48832, lo:27.21429},
+      {id:31360, n:'Depo', d:1232, la:38.48784, lo:27.21643},
+      {id:31358, n:'Nedim Dağtaş', d:1589, la:38.48517, lo:27.21793},
+      {id:31304, n:'Vecihi Hürkuş', d:2113, la:38.48076, lo:27.21847},
+      {id:31306, n:'Gayrettepe Cami', d:2462, la:38.47783, lo:27.21892}]},
+  '568': {len: 13549, via: {tr: 'Osmangazi üzerinden', en: 'via Osmangazi'},
+    tt: {wd: parseList('05:55 06:20 06:40 06:54 07:08 07:22 07:36 07:50 08:04 08:18 08:32 08:46 09:00 09:16 09:32 09:48 10:04 10:20 10:36 10:52 11:08 11:24 11:40 11:56 12:12 12:28 12:44 13:00 13:16 13:30 13:44 13:58 14:12 14:26 14:40 14:54 15:08 15:22 15:36 15:50 16:04 16:18 16:32 16:46 17:00 17:14 17:27 17:41 17:51 18:01 18:12 18:26 18:40 18:52 19:08 19:22 19:36 19:50 20:05 20:18 20:45 21:15 21:45 22:15 22:45 23:15 23:40 00:15'), sat: parseList('06:00 06:20 06:35 06:50 07:05 07:20 07:35 07:50 08:05 08:20 08:35 08:50 09:10 09:30 09:50 10:09 10:25 10:40 10:55 11:10 11:25 11:40 11:58 12:16 12:34 12:52 13:10 13:28 13:46 14:04 14:22 14:40 14:58 15:16 15:34 15:52 16:10 16:28 16:46 17:03 17:19 17:35 17:51 18:07 18:23 18:39 18:55 19:11 19:27 19:43 20:00 20:18 20:36 20:54 21:15 21:45 22:15 22:45 23:15 23:40 00:15'), sun: parseList('06:00 06:30 07:00 07:30 08:00 08:30 09:00 09:25 09:47 10:10 10:27 10:44 11:01 11:18 11:35 11:52 12:09 12:26 12:43 13:00 13:17 13:34 13:51 14:08 14:25 14:42 14:59 15:16 15:33 15:50 16:07 16:24 16:41 16:58 17:15 17:32 17:49 18:06 18:23 18:38 18:57 19:14 19:31 19:48 20:15 20:45 21:15 21:45 22:15 22:45 23:15 23:45 00:15')},
+    stops: [
+      {id:31370, n:'Evka 4 Son Durak', d:17, la:38.49504, lo:27.21397},
+      {id:31368, n:'Evka-4 Anaokulu', d:243, la:38.49360, lo:27.21280},
+      {id:31366, n:'Mehmet Akif Cami', d:472, la:38.49190, lo:27.21370},
+      {id:31364, n:'Evka 4 Muhtarlık', d:741, la:38.49030, lo:27.21490},
+      {id:31362, n:'Yeditepe İtfaiye', d:963, la:38.48832, lo:27.21429},
+      {id:31360, n:'Depo', d:1232, la:38.48784, lo:27.21643},
+      {id:31358, n:'Nedim Dağtaş', d:1589, la:38.48517, lo:27.21793},
+      {id:31392, n:'Turgut Reis', d:2042, la:38.48306, lo:27.21577},
+      {id:31390, n:'Gazi', d:2299, la:38.48286, lo:27.21257},
+      {id:31388, n:'Akdemir Parkı', d:2711, la:38.48437, lo:27.20853},
+      {id:31386, n:'Sevgi', d:3013, la:38.48400, lo:27.20490},
+      {id:32423, n:'Seyit Şanlı Anadolu Lisesi', d:3319, la:38.48185, lo:27.20410}]},
+  '585': {len: 10653, via: {tr: 'Spor Kompleksi ve Piriştina üzerinden', en: 'via Spor Kompleksi and Piriştina'},
+    tt: {wd: parseList('06:00 06:12 06:24 06:36 06:50 07:04 07:18 07:32 07:46 08:00 08:15 08:32 08:49 09:06 09:23 09:40 09:57 10:14 10:31 10:48 11:05 11:22 11:39 11:56 12:13 12:35 12:45 12:58 13:12 13:25 13:39 13:52 14:06 14:19 14:33 14:46 15:00 15:13 15:27 15:40 15:54 16:07 16:21 16:34 16:48 17:01 17:15 17:28 17:41 17:55 18:07 18:17 18:28 18:38 18:49 19:00 19:15 19:30 19:45 20:00 20:15 20:35 20:55 21:15 21:35 21:55 22:15 22:35 22:55 23:15 23:34 23:55 00:15'), sat: parseList('06:00 06:15 06:30 06:41 06:52 07:03 07:14 07:25 07:36 07:47 07:58 08:09 08:20 08:31 08:42 08:53 09:04 09:16 09:28 09:40 09:52 10:04 10:16 10:28 10:40 10:52 11:04 11:16 11:28 11:40 11:52 12:04 12:16 12:28 12:40 12:52 13:04 13:16 13:28 13:40 13:52 14:04 14:16 14:28 14:40 14:52 15:04 15:16 15:28 15:42 15:56 16:10 16:24 16:36 16:48 17:00 17:12 17:24 17:36 17:48 18:00 18:12 18:24 18:34 18:48 19:00 19:15 19:30 19:45 19:59 20:15 20:35 20:55 21:15 21:35 21:55 22:15 22:35 22:55 23:15 23:35 23:55 00:20'), sun: parseList('06:00 06:26 06:53 07:20 07:47 08:14 08:41 09:07 09:34 10:01 10:20 10:35 10:50 11:06 11:22 11:39 11:55 12:10 12:25 12:40 12:55 13:10 13:25 13:40 13:55 14:10 14:25 14:40 14:55 15:10 15:25 15:40 15:55 16:10 16:25 16:40 16:55 17:10 17:25 17:40 17:55 18:10 18:25 18:40 18:55 19:10 19:25 19:40 20:00 20:25 20:50 21:15 21:35 21:55 22:15 22:35 22:55 23:15 23:35 23:55 00:18')},
+    stops: [
+      {id:31370, n:'Evka 4 Son Durak', d:17, la:38.49504, lo:27.21397},
+      {id:31368, n:'Evka-4 Anaokulu', d:243, la:38.49360, lo:27.21280},
+      {id:31366, n:'Mehmet Akif Cami', d:472, la:38.49190, lo:27.21370},
+      {id:31364, n:'Evka 4 Muhtarlık', d:741, la:38.49030, lo:27.21490},
+      {id:31420, n:'Spor Kompleksi', d:906, la:38.48977, lo:27.21387},
+      {id:31418, n:'Belediye Evleri', d:1292, la:38.48911, lo:27.21075},
+      {id:31416, n:'Emek Sitesi', d:1584, la:38.48890, lo:27.20770},
+      {id:31932, n:'Doğa', d:1963, la:38.48847, lo:27.20423},
+      {id:31930, n:'Kardelen Sitesi', d:2152, la:38.48770, lo:27.20210},
+      {id:31928, n:'Pınar', d:2433, la:38.48678, lo:27.20025},
+      {id:31934, n:'Eren', d:2694, la:38.48550, lo:27.19760},
+      {id:31926, n:'Ezgi', d:2889, la:38.48420, lo:27.19640},
+      {id:31402, n:'Piriştina', d:3153, la:38.48360, lo:27.19890},
+      {id:31400, n:'Barbaros Cami', d:3397, la:38.48350, lo:27.20180}]},
 };
+const LINE_IDS = Object.keys(LINES);
 // İzmir Metro M1 headways (minutes) by service window, from İzmir open data.
 const METRO = {
   wd:  [[360,390,7.5],[390,540,4],[540,960,5],[960,1200,4],[1200,1460,10]],
   sat: [[360,390,7.5],[390,1200,5],[1200,1460,10]],
   sun: [[360,1200,7.5],[1200,1460,10]]
 };
-// Route length and stop positions along the Evka 4 -> Bornova Metro direction (metres from terminal), in route order.
-const ROUTE_LEN = 13321;
-const STOPS = [
-  {id:31370, n:'Evka 4 Son Durak', d:0,    la:38.49504, lo:27.21397},
-  {id:31368, n:'Evka-4 Anaokulu',  d:207,  la:38.49360, lo:27.21280},
-  {id:31366, n:'Mehmet Akif Cami', d:431,  la:38.49190, lo:27.21370},
-  {id:31364, n:'Evka 4 Muhtarlık', d:672,  la:38.49030, lo:27.21490},
-  {id:31362, n:'Yeditepe İtfaiye', d:906,  la:38.48832, lo:27.21429},
-  {id:31360, n:'Depo',             d:1154, la:38.48784, lo:27.21643},
-  {id:31358, n:'Nedim Dağtaş',     d:1513, la:38.48517, lo:27.21793},
-  {id:31392, n:'Turgut Reis',      d:1934, la:38.48306, lo:27.21577},
-  {id:31390, n:'Gazi',             d:2215, la:38.48286, lo:27.21257},
-  {id:31388, n:'Akdemir Parkı',    d:2613, la:38.48437, lo:27.20853},
-  {id:31386, n:'Sevgi',            d:2927, la:38.48400, lo:27.20490},
-  {id:32423, n:'Seyit Şanlı Anadolu Lisesi', d:3184, la:38.48185, lo:27.20410}
-];
-const FULL_RIDE = {early:34, am:38, mid:36, pm:40, night:30};
+// Typical bus speed by time of day (metres per minute) and weekend factor; tuned so 568's 13.3 km run takes 34-40 min.
+const SPEED = {early:392, am:351, mid:370, pm:333, night:444};
 const DAYF = {wd:1, sat:0.93, sun:0.88};
 const BANDS = ['early','am','mid','pm','night'];
 const N_SIM = 1600;
@@ -223,10 +280,19 @@ const CONF = 0.9;
 
 function band(m){ if (m < 420) return 'early'; if (m < 600) return 'am'; if (m < 960) return 'mid'; if (m < 1200) return 'pm'; return 'night'; }
 function dayTypeOf(date){ const d = date.getDay(); return d === 0 ? 'sun' : d === 6 ? 'sat' : 'wd'; }
-function stopById(id){ return STOPS.find(s => s.id === id) || STOPS[0]; }
-function stopIndex(id){ const i = STOPS.findIndex(s => s.id === id); return i < 0 ? 0 : i; }
-function frac(id){ return (ROUTE_LEN - stopById(id).d) / ROUTE_LEN; }
-function passMed(dep, stopId, dt){ return dep + FULL_RIDE[band(dep)] * DAYF[dt] * stopById(stopId).d / ROUTE_LEN; }
+function lineStop(line, stopId){ const L = LINES[line]; return L ? L.stops.find(s => s.id === stopId) || null : null; }
+function serves(line, stopId){ return !!lineStop(line, stopId); }
+function stopIndex(line, stopId){ return LINES[line].stops.findIndex(s => s.id === stopId); }
+function rideFull(line, b, dt){ return LINES[line].len / SPEED[b] * DAYF[dt]; }
+function frac(line, stopId){ return (LINES[line].len - lineStop(line, stopId).d) / LINES[line].len; }
+function passMed(line, dep, stopId, dt){ return dep + rideFull(line, band(dep), dt) * lineStop(line, stopId).d / LINES[line].len; }
+// All departures of the chosen lines, as times at her stop, in the order buses reach her.
+function departures(lines, stopId, dt){
+  const out = [];
+  for (const ln of lines){ if (!serves(ln, stopId)) continue; for (const dep of LINES[ln].tt[dt]) out.push({line: ln, dep, pass: passMed(ln, dep, stopId, dt)}); }
+  out.sort((a, b) => a.pass - b.pass);
+  return out;
+}
 function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function nrm(r){ let u = 0; while (u === 0) u = r(); const v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
 function expo(r, m){ return -Math.log(1 - r()) * m; }
@@ -238,8 +304,8 @@ function quant(sorted, q){ if (!sorted.length) return NaN; const i = Math.min(so
 function headwayAt(dt, m){ for (const [a, b, h] of METRO[dt]) if (m >= a && m < b) return h; return null; }
 function metroWait(dt, m, r){ if (m < 360) return (360 - m) + r() * 7.5; if (m >= 1460) return 600; return r() * (headwayAt(dt, m) || 10); }
 // Expected minutes from boarding the bus to reaching the department (timetable model, no personal data).
-function priorPost(set, b, dt, stopId, boardMin){
-  const ride = FULL_RIDE[b] * DAYF[dt] * frac(stopId);
+function priorPost(set, line, b, dt, stopId, boardMin){
+  const ride = rideFull(line, b, dt) * frac(line, stopId);
   const h = headwayAt(dt, boardMin + ride + set.transfer) || 10;
   return ride + set.transfer + h / 2 + 2.5 + set.walkFromMetro;
 }
@@ -247,11 +313,12 @@ function priorPost(set, b, dt, stopId, boardMin){
 function buildModel(state){
   const obs = {delay: [], post: {early: [], am: [], mid: [], pm: [], night: []}};
   for (const t of state.trips){
-    const x = t.t || {};
+    const x = t.t || {}, line = t.line;
+    if (!line || !LINES[line] || !serves(line, t.stopId)) continue; // trips saved before lines were tracked are left out
     if (t.delay != null && t.delay > -6 && t.delay < 30) obs.delay.push(t.delay);
     if (x.board && x.arrive && t.dep != null){
       const b = band(t.dep), boardMin = (x.board - t.base) / 60000, post = (x.arrive - x.board) / 60000;
-      const ratio = post / priorPost(state.set, b, t.dt || 'wd', t.stopId, boardMin);
+      const ratio = post / priorPost(state.set, line, b, t.dt || 'wd', t.stopId, boardMin);
       if (ratio > 0.4 && ratio < 2.5) obs.post[b].push(ratio);
     }
   }
@@ -265,30 +332,30 @@ function ratioMed(M, b){
   return 1;
 }
 function sampleDelay(M, r){ const o = M.obs.delay; if (o.length && r() < wt(o.length, 4)) return pick(o, r) + nrm(r) * 0.3; let d = 0.5 + nrm(r) * 0.9; if (r() < 0.1) d += expo(r, 4); return Math.max(-1.5, d); }
-function samplePost(M, b, dt, stopId, boardMin, r){
+function samplePost(M, line, b, dt, stopId, boardMin, r){
   const o = M.obs.post[b];
-  if (o.length && r() < wt(o.length, 4)) return pick(o, r) * priorPost(M.set, b, dt, stopId, boardMin) * Math.exp(nrm(r) * 0.04);
-  if (!o.length && M.pooled.length && r() < wt(M.pooled.length, 8)) return pick(M.pooled, r) * priorPost(M.set, b, dt, stopId, boardMin) * Math.exp(nrm(r) * 0.05);
-  let ride = FULL_RIDE[b] * DAYF[dt] * Math.exp(nrm(r) * 0.11); if (r() < 0.05) ride += expo(r, 5);
-  ride *= frac(stopId);
+  if (o.length && r() < wt(o.length, 4)) return pick(o, r) * priorPost(M.set, line, b, dt, stopId, boardMin) * Math.exp(nrm(r) * 0.04);
+  if (!o.length && M.pooled.length && r() < wt(M.pooled.length, 8)) return pick(M.pooled, r) * priorPost(M.set, line, b, dt, stopId, boardMin) * Math.exp(nrm(r) * 0.05);
+  let ride = rideFull(line, b, dt) * Math.exp(nrm(r) * 0.11); if (r() < 0.05) ride += expo(r, 5);
+  ride *= frac(line, stopId);
   const off = boardMin + ride, tr = Math.max(1.5, M.set.transfer + nrm(r) * 0.8);
   return ride + tr + metroWait(dt, off + tr, r) + 2.5 + nrm(r) * 0.25 + Math.max(3, M.set.walkFromMetro + nrm(r));
 }
 function seedOf(){ let h = 2166136261; for (const a of arguments){ const s = String(a); for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } } return h >>> 0; }
-// Leave at `leave`, aim for bus k0; if she misses it she takes the next one.
-function simLeave(M, dt, stopId, leave, k0, seed){
-  const deps = TT[dt], r = mulberry32(seed), out = new Float64Array(N_SIM);
+// Leave at `leave` aiming for bus k0; she boards whichever chosen bus actually reaches the stop first after she does.
+function simLeave(M, dt, stopId, deps, leave, k0, seed){
+  const r = mulberry32(seed), out = new Float64Array(N_SIM);
   for (let i = 0; i < N_SIM; i++){
     const tStop = leave + Math.max(0.5, M.set.walkToStop + nrm(r) * 0.4);
-    let j = k0, board = -1;
-    while (j < deps.length && j < k0 + 5){ const a = passMed(deps[j], stopId, dt) + sampleDelay(M, r); if (a >= tStop){ board = a; break; } j++; }
-    out[i] = board < 0 ? Infinity : board + samplePost(M, band(deps[j]), dt, stopId, board, r);
+    let best = Infinity, bj = -1;
+    for (let j = k0; j < deps.length && j < k0 + 6; j++){ const a = deps[j].pass + sampleDelay(M, r); if (a >= tStop && a < best){ best = a; bj = j; } }
+    out[i] = bj < 0 ? Infinity : best + samplePost(M, deps[bj].line, band(deps[bj].dep), dt, stopId, best, r);
   }
   out.sort(); return out;
 }
-function simBoard(M, dt, stopId, dep, boardMin, seed){
+function simBoard(M, dt, line, stopId, dep, boardMin, seed){
   const r = mulberry32(seed), out = new Float64Array(N_SIM), b = band(dep);
-  for (let i = 0; i < N_SIM; i++) out[i] = boardMin + samplePost(M, b, dt, stopId, boardMin, r);
+  for (let i = 0; i < N_SIM; i++) out[i] = boardMin + samplePost(M, line, b, dt, stopId, boardMin, r);
   out.sort(); return out;
 }
 function summarize(arr, deadline){ let c = 0; for (const v of arr) if (v <= deadline) c++; return {p: c / arr.length, q10: quant(arr, .1), q50: quant(arr, .5), q90: quant(arr, .9)}; }
@@ -298,54 +365,57 @@ function pickRec(opts){
   if (rec < 0 && opts.length){ rec = 0; for (let i = 1; i < opts.length; i++) if (opts[i].p > opts[rec].p + 0.005) rec = i; }
   return rec;
 }
-function planFor(state, dt, L, nowMin){
-  const deps = TT[dt], M = buildModel(state), stopId = state.set.stopId, wm = state.set.walkToStop;
-  const margin = 1.5, deadline = L - state.set.buffer, opts = [];
+function planFor(state, dt, Lm, nowMin){
+  const M = buildModel(state), stopId = state.set.stopId, wm = state.set.walkToStop, lines = state.set.lines;
+  const deps = departures(lines, stopId, dt), margin = 1.5, deadline = Lm - state.set.buffer, opts = [];
   const mk = k => {
-    const pass = passMed(deps[k], stopId, dt), leave = Math.floor(pass - margin - wm);
-    return Object.assign({k, dep: deps[k], pass, leave}, summarize(simLeave(M, dt, stopId, leave, k, seedOf(dt, k, stopId, M.n, L, wm, state.set.walkFromMetro, state.set.buffer)), deadline));
+    const d = deps[k], leave = Math.floor(d.pass - margin - wm);
+    return Object.assign({k, line: d.line, dep: d.dep, pass: d.pass, leave}, summarize(simLeave(M, dt, stopId, deps, leave, k, seedOf(dt, d.line, d.dep, stopId, M.n, Lm, wm, state.set.walkFromMetro, state.set.buffer, lines.join())), deadline));
   };
   for (let k = 0; k < deps.length; k++){
-    const pass = passMed(deps[k], stopId, dt);
-    if (pass > L - 15 || pass < L - 150) continue;
+    const pass = deps[k].pass;
+    if (pass > Lm - 10 || pass < Lm - 150) continue;
     if (nowMin != null && Math.floor(pass - margin - wm) < nowMin - 2) continue;
     opts.push(mk(k));
   }
   let late = false;
   if (!opts.length && nowMin != null){
     for (let k = 0; k < deps.length && opts.length < 2; k++){
-      const pass = passMed(deps[k], stopId, dt);
-      if (Math.floor(pass - margin - wm) >= nowMin - 2 && pass < L + 120) opts.push(mk(k));
+      const pass = deps[k].pass;
+      if (Math.floor(pass - margin - wm) >= nowMin - 2 && pass < Lm + 120) opts.push(mk(k));
     }
     late = opts.length > 0;
   }
-  return {dt, opts, rec: pickRec(opts), deadline, L, M, wm, margin, late};
+  return {dt, opts, rec: pickRec(opts), deadline, L: Lm, M, wm, margin, late};
 }
-function inferBus(dt, stopId, boardMin){
+function inferBus(dt, stopId, boardMin, lines){
   let best = null, bd = 1e9;
-  for (const d of TT[dt]){ const diff = boardMin - passMed(d, stopId, dt); if (diff < -4 || diff > 25) continue; const sc = Math.abs(diff - 0.7); if (sc < bd){ bd = sc; best = d; } }
-  return best == null ? null : {dep: best, delay: boardMin - passMed(best, stopId, dt)};
+  for (const d of departures(lines, stopId, dt)){ const diff = boardMin - d.pass; if (diff < -4 || diff > 25) continue; const sc = Math.abs(diff - 0.7); if (sc < bd){ bd = sc; best = d; } }
+  return best == null ? null : {line: best.line, dep: best.dep, delay: boardMin - best.pass};
 }
 function haversine(la1, lo1, la2, lo2){ const R = 6371000, r = Math.PI / 180, a = Math.sin((la2 - la1) * r / 2) ** 2 + Math.cos(la1 * r) * Math.cos(la2 * r) * Math.sin((lo2 - lo1) * r / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(a)); }
-// Interpret the open-data "approaching buses" list for her stop.
-function parseLive(list, stopId, dt, nowMin){
-  const si = stopIndex(stopId), me = stopById(stopId), term = STOPS[0], out = [];
-  const speed = ROUTE_LEN / (FULL_RIDE[band(nowMin)] * DAYF[dt]);
+// Interpret the open-data "buses approaching this stop" list for her lines.
+function parseLive(list, lines, stopId, dt, nowMin){
+  const out = [];
   for (const b of list || []){
     if (b == null) continue;
-    if (b.HatNumarasi != null && +b.HatNumarasi !== 568) continue;
+    const line = String(b.HatNumarasi);
+    if (!lines.includes(line) || !serves(line, stopId)) continue;
+    const stops = LINES[line].stops, si = stopIndex(line, stopId), me = stops[si], term = stops[0];
     const K = +b.KalanDurakSayisi;
     const la = parseFloat(String(b.KoorX).replace(',', '.')), lo = parseFloat(String(b.KoorY).replace(',', '.'));
     if (!isFinite(K) || K < 0) continue;
-    if (isFinite(la) && isFinite(lo) && haversine(la, lo, me.la, me.lo) > 4500) continue;
+    if (isFinite(la) && isFinite(lo) && haversine(la, lo, me.la, me.lo) > 4500) continue; // stale or bad GPS fix
     const atTerminal = isFinite(la) && isFinite(lo) && haversine(la, lo, term.la, term.lo) < 180;
+    const speed = SPEED[band(nowMin)] / DAYF[dt];
     let kind, eta = null;
     if (atTerminal || (si > 0 && K === si) || (si === 0 && K === 0)) kind = 'terminal';
     else if (K > si) kind = 'return';
-    else { kind = 'coming'; eta = K === 0 ? 0 : Math.max(0.5, (me.d - STOPS[si - K].d) / speed + K * 0.2); }
-    out.push({K, kind, eta});
+    else { kind = 'coming'; eta = K === 0 ? 0 : Math.max(0.5, (me.d - stops[si - K].d) / speed + K * 0.2); }
+    out.push({line, K, kind, eta});
   }
-  out.sort((a, b) => ({coming: 0, terminal: 1, return: 2}[a.kind] - {coming: 0, terminal: 1, return: 2}[b.kind]) || (a.K - b.K));
+  const rank = {coming: 0, terminal: 1, return: 2};
+  out.sort((a, b) => rank[a.kind] - rank[b.kind] || (a.eta || 0) - (b.eta || 0) || a.K - b.K);
   return out;
 }
 /* MODEL END */
@@ -358,20 +428,20 @@ const DICT = {
     today:'Bugün', tomorrow:'Yarın', hi:'Merhaba', settings:'Ayarlar',
     forLecture:'{d} {t} dersi', change:'değiştir', otherTime:'Başka bir saat', customToday:'Bugün', customTomorrow:'Yarın', apply:'Bu saate göre planla', pickTitle:'Hangi ders?', close:'Kapat',
     leave:'Evden çık', inM:'{m} dk sonra', inHM:'{h} sa {m} dk sonra', now:'Şimdi çık', run:'Hemen çık, hızlı yürü',
-    busAt:'568 durakta {t}', liveComing:'Canlı: {k} durak uzakta', liveAtStop:'Canlı: durakta', liveWait:'Canlı: son durakta bekliyor', liveNone:'Canlı: yaklaşan yok', liveOff:'Tarifeye göre',
+    busAt:'{l} durakta {t}', liveComing:'Canlı: {k} durak uzakta', liveAtStop:'Canlı: durakta', liveWait:'Canlı: son durakta bekliyor', liveNone:'Canlı: yaklaşan yok', liveOff:'Tarifeye göre',
     arrive:'Bölüme varış {t}', onTime:'zamanında varma şansı',
-    board:'Otobüse bindim', arrived:'Bölüme vardım', cancel:'Vazgeç',
+    board:'Otobüse bindim', arrived:'Bölüme vardım', cancel:'Vazgeç', whichBus:'Bindiğin otobüs',
     onWay:'Yoldasın', etaLabel:'Tahmini varış', lectureAt:'Ders {t}',
     details:'Ayrıntılar', hide:'Gizle',
-    dJourney:'Yolculuk', dLeave:'Evden çık', dBus:'568, {stop}', dOff:'Bornova Metro’da in', dMetro:'Metro, 1 durak (her {h} dk)', dWalk:'{n} dk yürü', dDept:'Bölüm',
+    dJourney:'Yolculuk', dLeave:'Evden çık', dBus:'{l}, {stop}', dOff:'Bornova Metro’da in', dMetro:'Metro, 1 durak (her {h} dk)', dWalk:'{n} dk yürü', dDept:'Bölüm',
     dOther:'Diğer otobüsler', dYou:'Senin verilerin', dNoTrips:'Henüz yolculuk yok. “Otobüse bindim” ve “Bölüme vardım” düğmelerine her bastığında tahminler sana göre düzelir.',
-    dStats:'{n} yolculuk · ortalama {a} dk · %{p} derse yetişti', dDelay:'568 durağına ortalama {v} dk {w} geliyor', early:'erken', lateW:'geç',
+    dStats:'{n} yolculuk · ortalama {a} dk · %{p} derse yetişti', dDelay:'Otobüs durağına ortalama {v} dk {w} geliyor', early:'erken', lateW:'geç',
     dMaps:'Google Haritalar’da aç', dStop:'ESHOT uygulaması için durak no {id}',
-    lateTitle:'Bu derse yetişmek zor', noBus:'Bu saatte uygun 568 seferi yok.', futureNote:'{d} için plan. Düğme o gün çıkar.',
+    lateTitle:'Bu derse yetişmek zor', noBus:'Bu saatte seçtiğin hatlarda uygun sefer yok.', futureNote:'{d} için plan. Düğme o gün çıkar.',
     savedOk:'Kaydedildi. Dersten {n} dk önce vardın.', savedLate:'Kaydedildi. {n} dk geç kaldın.', boarded:'İyi yolculuklar. Varınca dokun.',
-    setupTitle:'Hoş geldin', setupSub:'İki şey yeter: bindiğin durak ve ders saatlerin.', yourStop:'Bindiğin durak', yourLectures:'Ders saatlerin', start:'Başla',
+    setupTitle:'Hoş geldin', setupSub:'Üç şey yeter: otobüsün, durağın ve ders saatlerin.', yourLine:'Otobüsün', lineHint:'Birden fazla seçebilirsin; hangisi önce gelirse ona göre planlar.', yourStop:'Bindiğin durak', yourLectures:'Ders saatlerin', start:'Başla', pickLine:'En az bir otobüs seç',
     addTime:'Saat', addDays:'Günler', add:'Ekle', pickDay:'Önce gün seç', noLectures:'Henüz ders yok.',
-    sLectures:'Derslerim', sTrip:'Yolculuk', sWalk:'Evden durağa (dk)', sWalk2:'İstasyondan bölüme (dk)', sBuffer:'Kaç dk erken orada ol', sName:'Adın (isteğe bağlı)', sLang:'Dil', sGeneral:'Genel',
+    sLectures:'Derslerim', sTrip:'Yolculuk', sWalk:'Evden durağa (dk)', sWalk2:'İstasyondan bölüme (dk)', sBuffer:'Kaç dk erken orada ol', sName:'Adın (isteğe bağlı)', sGeneral:'Genel',
     sPrivacy:'Gizlilik', privacy:'Tüm bilgilerin yalnızca bu telefonda durur. Hesap, çerez veya takip yok. Canlı otobüs bilgisi için sadece durak numarası İzmir Büyükşehir’in açık veri servisine sorulur.',
     sBackup:'Yedek', backup:'Yedek kodunu kopyala', restorePh:'Yedek kodunu yapıştır', restore:'Geri yükle', reset:'Her şeyi sil', resetConfirm:'Silmek için tekrar dokun',
     copied:'Kopyalandı', copyFail:'Kopyalanamadı', restored:'Geri yüklendi', restoreBad:'Bu kod okunamadı', resetDone:'Silindi', back:'Geri', storeBad:'Bu tarayıcı verileri saklamıyor. Yedek kodunu not al.'
@@ -382,20 +452,20 @@ const DICT = {
     today:'Today', tomorrow:'Tomorrow', hi:'Hi', settings:'Settings',
     forLecture:'{d} {t} lecture', change:'change', otherTime:'Another time', customToday:'Today', customTomorrow:'Tomorrow', apply:'Plan for this time', pickTitle:'Which lecture?', close:'Close',
     leave:'Leave home', inM:'in {m} min', inHM:'in {h} h {m} min', now:'Leave now', run:'Leave right now, walk fast',
-    busAt:'568 at the stop {t}', liveComing:'Live: {k} stops away', liveAtStop:'Live: at the stop', liveWait:'Live: waiting at the terminal', liveNone:'Live: none approaching', liveOff:'From the timetable',
+    busAt:'{l} at the stop {t}', liveComing:'Live: {k} stops away', liveAtStop:'Live: at the stop', liveWait:'Live: waiting at the terminal', liveNone:'Live: none approaching', liveOff:'From the timetable',
     arrive:'Arrive {t}', onTime:'chance of being on time',
-    board:'I’m on the bus', arrived:'I’ve arrived', cancel:'Cancel',
+    board:'I’m on the bus', arrived:'I’ve arrived', cancel:'Cancel', whichBus:'Your bus',
     onWay:'On your way', etaLabel:'Expected arrival', lectureAt:'Lecture {t}',
     details:'Details', hide:'Hide',
-    dJourney:'Journey', dLeave:'Leave home', dBus:'568, {stop}', dOff:'Get off at Bornova Metro', dMetro:'Metro, 1 stop (every {h} min)', dWalk:'{n} min walk', dDept:'Department',
+    dJourney:'Journey', dLeave:'Leave home', dBus:'{l}, {stop}', dOff:'Get off at Bornova Metro', dMetro:'Metro, 1 stop (every {h} min)', dWalk:'{n} min walk', dDept:'Department',
     dOther:'Other buses', dYou:'Your data', dNoTrips:'No trips yet. Each time you tap “I’m on the bus” and “I’ve arrived”, the predictions adjust to you.',
-    dStats:'{n} trips · average {a} min · {p}% made it on time', dDelay:'The 568 reaches your stop {v} min {w} on average', early:'early', lateW:'late',
+    dStats:'{n} trips · average {a} min · {p}% made it on time', dDelay:'Your bus reaches the stop {v} min {w} on average', early:'early', lateW:'late',
     dMaps:'Open in Google Maps', dStop:'Stop no. {id} for the ESHOT app',
-    lateTitle:'This lecture is hard to make', noBus:'No 568 trip fits this time.', futureNote:'Plan for {d}. The button appears that day.',
+    lateTitle:'This lecture is hard to make', noBus:'None of your lines has a trip that fits this time.', futureNote:'Plan for {d}. The button appears that day.',
     savedOk:'Saved. You arrived {n} min before the lecture.', savedLate:'Saved. You were {n} min late.', boarded:'Have a good ride. Tap when you arrive.',
-    setupTitle:'Welcome', setupSub:'Two things are enough: your stop and your lecture times.', yourStop:'Your stop', yourLectures:'Your lecture times', start:'Start',
+    setupTitle:'Welcome', setupSub:'Three things are enough: your bus, your stop and your lecture times.', yourLine:'Your bus', lineHint:'You can pick more than one; the plan uses whichever comes first.', yourStop:'Your stop', yourLectures:'Your lecture times', start:'Start', pickLine:'Pick at least one bus',
     addTime:'Time', addDays:'Days', add:'Add', pickDay:'Pick a day first', noLectures:'No lectures yet.',
-    sLectures:'My lectures', sTrip:'Trip', sWalk:'Home to stop (min)', sWalk2:'Station to department (min)', sBuffer:'Arrive this many min early', sName:'Your name (optional)', sLang:'Language', sGeneral:'General',
+    sLectures:'My lectures', sTrip:'Trip', sWalk:'Home to stop (min)', sWalk2:'Station to department (min)', sBuffer:'Arrive this many min early', sName:'Your name (optional)', sGeneral:'General',
     sPrivacy:'Privacy', privacy:'All your information stays on this phone only. No account, cookies or tracking. For live bus info, only the stop number is sent to İzmir’s open data service.',
     sBackup:'Backup', backup:'Copy backup code', restorePh:'Paste a backup code', restore:'Restore', reset:'Delete everything', resetConfirm:'Tap again to delete',
     copied:'Copied', copyFail:'Could not copy', restored:'Restored', restoreBad:'That code could not be read', resetDone:'Deleted', back:'Back', storeBad:'This browser is not keeping data. Save your backup code.'
@@ -404,13 +474,14 @@ const DICT = {
 
 /* ---------- Storage: this device only (localStorage, mirrored to IndexedDB) ---------- */
 const KEY = 'derse-yetis-v1';
-const DEFAULTS = () => ({v:1, onboarded:false, savedAt:0, set:{name:'', lang:'tr', stopId:31370, walkToStop:4, walkFromMetro:12, transfer:3, buffer:5}, lectures:[], trips:[], active:null});
+const DEFAULTS = () => ({v:1, onboarded:false, savedAt:0, set:{name:'', lang:'tr', lines:[], stopId:31370, walkToStop:4, walkFromMetro:12, transfer:3, buffer:5}, lectures:[], trips:[], active:null});
 let storageOk = true;
 function normalize(s){
   const d = DEFAULTS();
   if (!s || typeof s !== 'object') return d;
   const set = Object.assign(d.set, s.set || {});
   delete set.conf;
+  set.lines = Array.isArray(set.lines) ? set.lines.map(String).filter(l => LINES[l]) : [];
   const active = s.active && s.active.t && s.active.t.board ? s.active : null;
   return {v:1, onboarded:!!s.onboarded, savedAt:+s.savedAt || 0, set, lectures:Array.isArray(s.lectures) ? s.lectures : [], trips:Array.isArray(s.trips) ? s.trips : [], active};
 }
@@ -466,22 +537,31 @@ function probClass(p){ return p >= CONF ? 'ok' : p >= 0.6 ? 'warn' : 'bad'; }
 function toast(msg){ const el = $('toast'); el.textContent = msg; el.hidden = false; clearTimeout(ui.toastT); ui.toastT = setTimeout(() => { el.hidden = true; }, 3800); }
 function copyText(txt){ try { navigator.clipboard.writeText(txt).then(() => toast(t('copied')), () => toast(t('copyFail'))); } catch (e) { toast(t('copyFail')); } }
 function isTyping(){ const a = document.activeElement; return !!(a && /INPUT|SELECT|TEXTAREA/.test(a.tagName)); }
+// Stops served by at least one chosen line, in route order.
+function stopChoices(){
+  const lines = S.set.lines.length ? S.set.lines : LINE_IDS, seen = new Map();
+  for (const ln of lines) for (const s of LINES[ln].stops) if (!seen.has(s.id) || s.d < seen.get(s.id).d) seen.set(s.id, s);
+  return [...seen.values()].sort((a, b) => a.d - b.d);
+}
+function fixStop(){ const ch = stopChoices(); if (!ch.some(s => s.id === S.set.stopId)) S.set.stopId = ch[0].id; }
+function stopName(id){ for (const ln of LINE_IDS){ const s = lineStop(ln, id); if (s) return s.n; } return String(id); }
 
 /* ---------- Live bus data ---------- */
-const LIVE = {status:'idle', buses:[], at:0, fails:0, pauseUntil:0, busy:false, stopId:null};
+const LIVE = {status:'idle', buses:[], at:0, fails:0, pauseUntil:0, busy:false, key:''};
+function liveKey(){ return S.set.stopId + '|' + S.set.lines.join(','); }
 async function fetchLive(){
-  if (LIVE.busy || Date.now() < LIVE.pauseUntil || !navigator.onLine) return;
+  if (LIVE.busy || Date.now() < LIVE.pauseUntil || !navigator.onLine || !S.set.lines.length) return;
   LIVE.busy = true;
-  const stopId = S.set.stopId, ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 7000);
+  const key = liveKey(), stopId = S.set.stopId, lines = S.set.lines.slice(), ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 7000);
   try {
-    const res = await fetch('https://openapi.izmir.bel.tr/api/iztek/hattinyaklasanotobusleri/568/' + stopId, {signal: ctl.signal, cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer'});
+    const res = await fetch('https://openapi.izmir.bel.tr/api/iztek/duragayaklasanotobusler/' + stopId, {signal: ctl.signal, cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer'});
     if (!res.ok && res.status !== 204) throw new Error('http ' + res.status);
     const txt = res.status === 204 ? '' : await res.text();
     const data = txt ? JSON.parse(txt) : [];
-    const list = Array.isArray(data) ? data : (data && Array.isArray(data.HatOtobusKonumlari) ? data.HatOtobusKonumlari : []);
+    const list = Array.isArray(data) ? data : [];
     const now = new Date();
-    LIVE.buses = parseLive(list, stopId, dayTypeOf(now), minOfDay(now));
-    LIVE.at = Date.now(); LIVE.status = 'ok'; LIVE.fails = 0; LIVE.stopId = stopId;
+    LIVE.buses = parseLive(list, lines, stopId, dayTypeOf(now), minOfDay(now));
+    LIVE.at = Date.now(); LIVE.status = 'ok'; LIVE.fails = 0; LIVE.key = key;
   } catch (e) {
     LIVE.fails++;
     if (!(LIVE.at && Date.now() - LIVE.at < 90000)) LIVE.status = 'down';
@@ -489,29 +569,33 @@ async function fetchLive(){
   } finally { clearTimeout(to); LIVE.busy = false; }
   if (ui.view === 'home' && !isTyping()) render();
 }
-function liveFresh(){ return LIVE.status === 'ok' && LIVE.stopId === S.set.stopId && Date.now() - LIVE.at < 150000; }
-function liveComing(){ if (!liveFresh()) return null; const el = (Date.now() - LIVE.at) / 60000; const c = LIVE.buses.find(b => b.kind === 'coming'); return c ? Object.assign({}, c, {etaNow: Math.max(0, c.eta - el)}) : null; }
-function liveText(){
+function liveFresh(){ return LIVE.status === 'ok' && LIVE.key === liveKey() && Date.now() - LIVE.at < 150000; }
+function liveComingAll(){ if (!liveFresh()) return []; const el = (Date.now() - LIVE.at) / 60000; return LIVE.buses.filter(b => b.kind === 'coming').map(b => Object.assign({}, b, {etaNow: Math.max(0, b.eta - el)})); }
+function liveText(line, matched){
   if (!liveFresh()) return {txt: t('liveOff'), on: false};
-  const c = liveComing();
-  if (c) return {txt: c.K === 0 ? t('liveAtStop') : t('liveComing', {k: c.K}), on: true};
-  if (LIVE.buses.some(b => b.kind === 'terminal')) return {txt: t('liveWait'), on: true};
+  if (matched) return {txt: matched.K === 0 ? t('liveAtStop') : t('liveComing', {k: matched.K}), on: true};
+  if (LIVE.buses.some(b => b.line === line && b.kind === 'terminal')) return {txt: t('liveWait'), on: true};
   return {txt: t('liveNone'), on: true};
 }
+// Snap each live, already departed bus onto its timetable trip and re-simulate that option from its real position.
 function applyLive(P, nowMin){
-  const c = liveComing(); if (!c || !P.opts.length) return;
-  const livePass = nowMin + c.etaNow;
-  let best = -1, bd = 1e9;
-  P.opts.forEach((o, i) => { const diff = livePass - o.pass; if (diff >= -6 && diff <= 15 && Math.abs(diff - 1) < bd){ bd = Math.abs(diff - 1); best = i; } });
-  if (best < 0) return;
-  const o = P.opts[best];
-  Object.assign(o, summarize(simBoard(P.M, P.dt, S.set.stopId, o.dep, livePass, seedOf('live', o.dep, Math.round(livePass * 2))), P.deadline), {pass: livePass, leave: Math.floor(livePass - P.margin - P.wm), live: true});
+  if (!P.opts.length) return;
+  const used = new Set();
+  for (const c of liveComingAll()){
+    const livePass = nowMin + c.etaNow;
+    let best = -1, bd = 1e9;
+    P.opts.forEach((o, i) => { if (o.line !== c.line || used.has(i)) return; const diff = livePass - o.pass; if (diff >= -6 && diff <= 15 && Math.abs(diff - 1) < bd){ bd = Math.abs(diff - 1); best = i; } });
+    if (best < 0) continue;
+    used.add(best);
+    const o = P.opts[best];
+    Object.assign(o, summarize(simBoard(P.M, P.dt, o.line, S.set.stopId, o.dep, livePass, seedOf('live', o.line, o.dep, Math.round(livePass * 2))), P.deadline), {pass: livePass, leave: Math.floor(livePass - P.margin - P.wm), live: c});
+  }
   P.opts = P.opts.filter(x => x.leave >= nowMin - 2);
   P.rec = pickRec(P.opts);
 }
 let lastPlan = null;
 function liveWanted(){
-  if (document.hidden || ui.view !== 'home' || S.active) return false;
+  if (document.hidden || ui.view !== 'home' || S.active || !S.set.lines.length) return false;
   if (!lastPlan || !lastPlan.isToday || !lastPlan.o) return false;
   return lastPlan.o.leave - minOfDay(new Date()) < 75;
 }
@@ -533,6 +617,10 @@ function currentTarget(now){
 }
 
 /* ---------- Views ---------- */
+const TICK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L19 7"/></svg>';
+function linePicker(){
+  return `<div class="lines" role="group" aria-label="${esc(t('yourLine'))}">${LINE_IDS.map(ln => `<button class="linechip" data-act="line" data-l="${ln}" aria-pressed="${S.set.lines.includes(ln)}"><span class="led">${ln}</span><span class="t">${esc(LINES[ln].via[S.set.lang] || LINES[ln].via.tr)}<small>Evka 4 → Bornova Metro</small></span><span class="tick">${TICK}</span></button>`).join('')}</div>`;
+}
 function lectureEditor(){
   const ds = L().daysShort;
   const dayBtns = [1, 2, 3, 4, 5, 6, 7].map(d => `<button data-act="lecDay" data-d="${d}" aria-pressed="${ui.lecDays.includes(d)}">${esc(ds[d % 7])}</button>`).join('');
@@ -547,13 +635,15 @@ function lectureEditor(){
     ${list ? `<div>${list}</div>` : `<p class="small muted" style="margin:0">${esc(t('noLectures'))}</p>`}
   </div>`;
 }
-function stopSelect(id){ return `<select id="${id}" data-set="stopId">${STOPS.map(s => `<option value="${s.id}"${s.id === S.set.stopId ? ' selected' : ''}>${esc(s.n)}</option>`).join('')}</select>`; }
+function stopSelect(id){ return `<select id="${id}" data-set="stopId">${stopChoices().map(s => `<option value="${s.id}"${s.id === S.set.stopId ? ' selected' : ''}>${esc(s.n)}</option>`).join('')}</select>`; }
 
 function setupView(){
+  const ready = S.set.lines.length && S.lectures.length;
   return `<div class="section"><h2>${esc(t('setupTitle'))}</h2><p class="muted" style="margin:0">${esc(t('setupSub'))}</p></div>
+    <div class="section"><h3>${esc(t('yourLine'))}</h3>${linePicker()}<p class="hint">${esc(t('lineHint'))}</p></div>
     <div class="section"><h3>${esc(t('yourStop'))}</h3><label class="vh" for="w-stop">${esc(t('yourStop'))}</label>${stopSelect('w-stop')}</div>
     <div class="section"><h3>${esc(t('yourLectures'))}</h3>${lectureEditor()}</div>
-    <button class="primary" data-act="start"${S.lectures.length ? '' : ' disabled style="opacity:.45"'}>${esc(t('start'))}</button>`;
+    <button class="primary" data-act="start"${ready ? '' : ' disabled style="opacity:.45"'}>${esc(t('start'))}</button>`;
 }
 
 function pickerView(now){
@@ -570,25 +660,28 @@ function pickerView(now){
 
 function tripView(now){
   const a = S.active, M = buildModel(S), boardMin = (a.t.board - a.base) / 60000;
-  const dep = a.dep != null ? a.dep : 480;
-  const s = summarize(simBoard(M, a.dt, a.stopId, dep, boardMin, seedOf('trip', a.t.board)), a.L - a.buffer);
+  const line = a.line && LINES[a.line] && serves(a.line, a.stopId) ? a.line : (S.set.lines.find(l => serves(l, a.stopId)) || '568');
+  const dep = a.dep != null ? a.dep : boardMin - 5;
+  const s = summarize(simBoard(M, a.dt, line, a.stopId, dep, boardMin, seedOf('trip', a.t.board, line)), a.L - a.buffer);
+  const choices = S.set.lines.filter(l => serves(l, a.stopId));
+  const which = choices.length > 1 ? `<div class="which" role="group" aria-label="${esc(t('whichBus'))}"><span>${esc(t('whichBus'))}</span>${choices.map(l => `<button data-act="tripLine" data-l="${l}" aria-pressed="${l === line}">${l}</button>`).join('')}</div>` : '';
   return `<section class="hero"><p class="label">${esc(t('onWay'))} · ${esc(t('etaLabel'))}</p><p class="time">${hm(s.q50)}</p>
       <p class="count ${s.p >= CONF ? 'calm' : s.p >= 0.6 ? 'soon' : 'now'}">${pct(s.p)} · ${esc(t('lectureAt', {t: hm(a.L)}))}</p></section>
+    ${which}
     <button class="primary" data-act="arrived">${esc(t('arrived'))}</button>
     <button class="quiet" data-act="cancelTrip">${esc(t('cancel'))}</button>`;
 }
 
-function detailsHTML(o, P, tgt){
-  const stop = stopById(S.set.stopId), f = frac(S.set.stopId), b = band(o.dep);
-  const ratio = ratioMed(P.M, b);
-  const ride = FULL_RIDE[b] * DAYF[P.dt] * f * ratio;
+function detailsHTML(o, P){
+  const stopId = S.set.stopId, b = band(o.dep), ratio = ratioMed(P.M, b);
+  const ride = rideFull(o.line, b, P.dt) * frac(o.line, stopId) * ratio;
   const off = o.pass + 0.5 + ride, tr = S.set.transfer * ratio;
   const h = headwayAt(P.dt, off + tr) || 10;
   const uni = off + tr + h / 2 + 2.5;
   let chips = '';
   if (P.opts.length > 1){
     const lo = Math.max(0, P.rec - 1), hi = Math.min(P.opts.length, lo + 4);
-    for (let i = lo; i < hi; i++){ const x = P.opts[i]; chips += `<button class="chip" data-act="opt" data-k="${x.k}" aria-pressed="${x === o}"><b>${hm(x.leave)}</b><span class="${probClass(x.p)}">${pct(x.p)}</span></button>`; }
+    for (let i = lo; i < hi; i++){ const x = P.opts[i]; chips += `<button class="chip" data-act="opt" data-k="${x.k}" aria-pressed="${x === o}"><small>${esc(x.line)}</small><b>${hm(x.leave)}</b><span class="${probClass(x.p)}">${pct(x.p)}</span></button>`; }
   }
   const trips = S.trips, done = trips.filter(x => x.t && x.t.board && x.t.arrive);
   const withL = trips.filter(x => x.t && x.t.arrive && x.L != null), onTime = withL.filter(x => (x.t.arrive - x.base) / 60000 <= x.L).length;
@@ -600,12 +693,13 @@ function detailsHTML(o, P, tgt){
     you = `<p>${esc(t('dStats', {n: trips.length, a: avg, p: withL.length ? Math.round(onTime / withL.length * 100) : '--'}))}</p>`;
     if (dl.length){ const m = mean(dl); you += `<p>${esc(t('dDelay', {v: dec(Math.abs(m)), w: m < 0 ? t('early') : t('lateW')}))}</p>`; }
   }
-  const url = 'https://www.google.com/maps/dir/?api=1&origin=' + stop.la + ',' + stop.lo + '&destination=' + encodeURIComponent('Ege Üniversitesi Makine Mühendisliği Bölümü, Bornova') + '&travelmode=transit';
+  const st = lineStop(o.line, stopId);
+  const url = 'https://www.google.com/maps/dir/?api=1&origin=' + st.la + ',' + st.lo + '&destination=' + encodeURIComponent('Ege Üniversitesi Makine Mühendisliği Bölümü, Bornova') + '&travelmode=transit';
   return `<div class="details">
     <h3>${esc(t('dJourney'))}</h3>
     <ol class="steps">
       <li><time>${hm(o.leave)}</time><span>${esc(t('dLeave'))}</span></li>
-      <li><time>${hm(o.pass)}</time><span>${esc(t('dBus', {stop: stop.n}))}</span></li>
+      <li><time>${hm(o.pass)}</time><span>${esc(t('dBus', {l: o.line, stop: st.n}))}</span></li>
       <li><time>${hm(off)}</time><span>${esc(t('dOff'))}</span></li>
       <li><time>${hm(off + tr + h / 2)}</time><span>${esc(t('dMetro', {h: dec(h)}))}</span></li>
       <li><time>${hm(uni)}</time><span>${esc(t('dWalk', {n: S.set.walkFromMetro}))}</span></li>
@@ -614,16 +708,16 @@ function detailsHTML(o, P, tgt){
     ${chips ? `<h3>${esc(t('dOther'))}</h3><div class="chips">${chips}</div>` : ''}
     <h3>${esc(t('dYou'))}</h3>${you}
     <p><a class="link" href="${url}" target="_blank" rel="noopener noreferrer">${esc(t('dMaps'))}</a></p>
-    <p class="small muted">${esc(t('dStop', {id: stop.id}))}</p>
+    <p class="small muted">${esc(t('dStop', {id: stopId}))}</p>
   </div>`;
 }
 
 function homeView(now){
-  if (!S.onboarded || !S.lectures.length && !ui.custom) return setupView();
+  if (ui.setup || !S.onboarded || !S.set.lines.length || (!S.lectures.length && !ui.custom)){ ui.setup = true; return setupView(); }
   if (ui.picking) return pickerView(now);
   if (S.active) return tripView(now);
   const tgt = currentTarget(now);
-  if (!tgt) return setupView();
+  if (!tgt){ ui.setup = true; return setupView(); }
   const nowMin = minOfDay(now), isToday = sameDay(tgt.date, now);
   const P = planFor(S, dayTypeOf(tgt.date), tgt.L, isToday ? nowMin : null);
   if (isToday) applyLive(P, nowMin);
@@ -642,23 +736,24 @@ function homeView(now){
     else if (m > -0.5){ cls = 'now'; txt = t('now'); }
     else { cls = 'now'; txt = t('run'); }
   }
-  const live = isToday ? liveText() : null, stop = stopById(S.set.stopId);
+  const live = isToday ? liveText(o.line, o.live) : null;
   return `${targetBtn}
     ${P.late ? `<p class="note" style="text-align:left;color:var(--bad);font-weight:600">${esc(t('lateTitle'))}</p>` : ''}
     <section class="hero"><p class="label">${esc(t('leave'))}</p><p class="time">${hm(o.leave)}</p><p class="count ${cls}">${esc(txt)}</p></section>
     <div class="facts">
-      <div class="fact"><span class="led">568</span><div class="k"><b>${esc(t('busAt', {t: hm(o.pass)}))}</b><span>${esc(stop.n)}${live ? ` · <span class="live${live.on ? '' : ' off'}"><i></i>${esc(live.txt)}</span>` : ''}</span></div></div>
+      <div class="fact"><span class="led">${esc(o.line)}</span><div class="k"><b>${esc(t('busAt', {l: o.line, t: hm(o.pass)}))}</b><span>${esc(stopName(S.set.stopId))}${live ? ` · <span class="live${live.on ? '' : ' off'}"><i></i>${esc(live.txt)}</span>` : ''}</span></div></div>
       <div class="fact"><span class="pin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18M5 21V8l7-4 7 4v13M9 21v-6h6v6"/></svg></span><div class="k"><b>${esc(t('arrive', {t: hm(o.q50)}))}</b><span>${esc(t('onTime'))}</span></div><span class="v ${probClass(o.p)}">${pct(o.p)}</span></div>
     </div>
     ${isToday ? `<button class="primary" data-act="board">${esc(t('board'))}</button>` : `<p class="note">${esc(t('futureNote', {d: dayLabel(tgt.date, now)}))}</p>`}
     <button class="quiet" data-act="details" aria-expanded="${ui.details}">${esc(ui.details ? t('hide') : t('details'))}</button>
-    ${ui.details ? detailsHTML(o, P, tgt) : ''}`;
+    ${ui.details ? detailsHTML(o, P) : ''}`;
 }
 
 function settingsView(){
   const num = (id, key, label, min, max) => `<label class="f" for="${id}">${esc(label)}<input id="${id}" type="number" inputmode="numeric" min="${min}" max="${max}" step="1" value="${S.set[key]}" data-set="${key}"></label>`;
   return `<button class="back" data-act="home">&larr; ${esc(t('back'))}</button>
     <h2>${esc(t('settings'))}</h2>
+    <div class="section"><h3>${esc(t('yourLine'))}</h3>${linePicker()}<p class="hint">${esc(t('lineHint'))}</p></div>
     <div class="section"><h3>${esc(t('sLectures'))}</h3>${lectureEditor()}</div>
     <div class="section"><h3>${esc(t('sTrip'))}</h3><div class="box">
       <label class="f" for="s-stop">${esc(t('yourStop'))}${stopSelect('s-stop')}</label>
@@ -694,16 +789,34 @@ function addLecture(){
   for (const d of ui.lecDays) if (!S.lectures.some(l => l.day === d && l.time === time)) S.lectures.push({id: uid(), day: d, time});
   ui.lecDays = []; ui.lecTime = time; save(); render();
 }
+function toggleLine(ln){
+  if (S.set.lines.includes(ln)){ if (S.set.lines.length === 1 && S.onboarded){ toast(t('pickLine')); return; } S.set.lines = S.set.lines.filter(x => x !== ln); }
+  else S.set.lines = LINE_IDS.filter(x => x === ln || S.set.lines.includes(x));
+  fixStop(); ui.optK = null; LIVE.status = 'idle'; LIVE.buses = []; save(); render();
+}
 function board(){
   const now = new Date(), tgt = lastPlan ? lastPlan.tgt : currentTarget(now), base = midnight(now).getTime(), dt = dayTypeOf(now), stopId = S.set.stopId;
-  const inf = inferBus(dt, stopId, minOfDay(now));
-  S.active = {id: uid(), base, dt, stopId, L: tgt ? tgt.L : minOfDay(now) + 60, buffer: S.set.buffer, dep: inf ? inf.dep : null, delay: inf ? inf.delay : null, t: {board: Date.now()}};
+  const boardMin = minOfDay(now);
+  let inf = null;
+  // Prefer the live bus that is at (or just reached) her stop; otherwise the closest scheduled trip.
+  const c = liveComingAll().filter(b => b.etaNow < 3).sort((a, b) => a.etaNow - b.etaNow)[0];
+  if (c){ const m = inferBus(dt, stopId, boardMin, [c.line]); if (m) inf = m; }
+  if (!inf) inf = inferBus(dt, stopId, boardMin, S.set.lines);
+  if (!inf && lastPlan && lastPlan.o) inf = {line: lastPlan.o.line, dep: lastPlan.o.dep, delay: null};
+  S.active = {id: uid(), base, dt, stopId, L: tgt ? tgt.L : boardMin + 60, buffer: S.set.buffer, line: inf ? inf.line : S.set.lines[0], dep: inf ? inf.dep : null, delay: inf ? inf.delay : null, t: {board: Date.now()}};
   save(); render(); toast(t('boarded'));
 }
+function setTripLine(ln){
+  const a = S.active; if (!a || !serves(ln, a.stopId)) return;
+  const m = inferBus(a.dt, a.stopId, (a.t.board - a.base) / 60000, [ln]);
+  a.line = ln; a.dep = m ? m.dep : null; a.delay = m ? m.delay : null;
+  save(); render();
+}
+function tripRecord(a){ return {id: a.id, base: a.base, dt: a.dt, stopId: a.stopId, L: a.L, buffer: a.buffer, line: a.line, dep: a.dep, delay: a.delay, t: a.t}; }
 function arrive(){
   const a = S.active; if (!a) return;
   a.t.arrive = Date.now();
-  S.trips.push({id: a.id, base: a.base, dt: a.dt, stopId: a.stopId, L: a.L, buffer: a.buffer, dep: a.dep, delay: a.delay, t: a.t});
+  S.trips.push(tripRecord(a));
   if (S.trips.length > 300) S.trips = S.trips.slice(-300);
   S.active = null; ui.optK = null; save();
   const diff = Math.round(a.L - (a.t.arrive - a.base) / 60000);
@@ -712,10 +825,7 @@ function arrive(){
 }
 function expireStale(){
   const a = S.active; if (!a) return;
-  if (Date.now() - a.t.board > 3 * 3600 * 1000){
-    S.trips.push({id: a.id, base: a.base, dt: a.dt, stopId: a.stopId, L: a.L, buffer: a.buffer, dep: a.dep, delay: a.delay, t: a.t});
-    S.active = null; save();
-  }
+  if (Date.now() - a.t.board > 3 * 3600 * 1000){ S.trips.push(tripRecord(a)); S.active = null; save(); }
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
@@ -723,7 +833,8 @@ document.addEventListener('click', e => {
   switch (act){
     case 'settings': go('settings'); break;
     case 'home': go('home'); break;
-    case 'start': if (S.lectures.length){ S.onboarded = true; save(); render(); maybeLive(true); } break;
+    case 'start': if (S.lectures.length && S.set.lines.length){ S.onboarded = true; ui.setup = false; save(); render(); maybeLive(true); } else if (!S.set.lines.length) toast(t('pickLine')); break;
+    case 'line': toggleLine(b.getAttribute('data-l')); break;
     case 'lecDay': { const d = +b.getAttribute('data-d'); ui.lecTime = $('l-time').value || ui.lecTime; ui.lecDays = ui.lecDays.includes(d) ? ui.lecDays.filter(x => x !== d) : ui.lecDays.concat(d); render(); break; }
     case 'lecAdd': addLecture(); break;
     case 'lecDel': S.lectures = S.lectures.filter(l => l.id !== b.getAttribute('data-id')); save(); render(); break;
@@ -740,6 +851,7 @@ document.addEventListener('click', e => {
     case 'opt': ui.optK = +b.getAttribute('data-k'); render(); break;
     case 'details': ui.details = !ui.details; render(); break;
     case 'board': board(); break;
+    case 'tripLine': setTripLine(b.getAttribute('data-l')); break;
     case 'arrived': arrive(); break;
     case 'cancelTrip': S.active = null; save(); render(); break;
     case 'lang': S.set.lang = b.getAttribute('data-v'); save(); render(); break;
@@ -751,12 +863,12 @@ document.addEventListener('click', e => {
       try {
         const obj = JSON.parse(decodeURIComponent(escape(atob(($('s-restore').value || '').trim()))));
         if (!obj || typeof obj !== 'object' || !obj.set) throw new Error('bad');
-        S = normalize(obj); S.onboarded = true; save(); toast(t('restored')); render();
+        S = normalize(obj); S.onboarded = true; fixStop(); save(); toast(t('restored')); render();
       } catch (err) { toast(t('restoreBad')); }
       break;
     }
     case 'reset':
-      if (ui.resetArm > Date.now()){ S = DEFAULTS(); ui.resetArm = 0; try { localStorage.removeItem(KEY); } catch (err) {} IDB.clear(); toast(t('resetDone')); go('home'); }
+      if (ui.resetArm > Date.now()){ S = DEFAULTS(); ui.resetArm = 0; ui.setup = false; try { localStorage.removeItem(KEY); } catch (err) {} IDB.clear(); toast(t('resetDone')); go('home'); }
       else { ui.resetArm = Date.now() + 4000; render(); setTimeout(() => { if (ui.view === 'settings' && !isTyping()) render(); }, 4100); }
       break;
   }
@@ -781,6 +893,7 @@ function tick(){
   if (m !== lastMinute && !isTyping() && ui.view === 'home'){ lastMinute = m; render(); }
   maybeLive();
 }
+fixStop();
 render();
 lastMinute = new Date().getHours() * 60 + new Date().getMinutes();
 maybeLive(true);
@@ -792,5 +905,6 @@ if ('serviceWorker' in navigator && location.protocol === 'https:'){
 }
 })();
 </script>
+
 </body>
 </html>

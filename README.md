@@ -1,8 +1,8 @@
 # Derse Yetiş
 
-A small web app for commuting from Evka 4 to Ege University's Faculty of Engineering by ESHOT line 568 and İzmir Metro. It tells you when to leave home for your next lecture.
+A small web app for commuting from Evka 4 to Ege University's Faculty of Engineering by ESHOT bus (565, 566, 568 or 585) and İzmir Metro. It tells you when to leave home for your next lecture.
 
-- Uses the ESHOT 568 timetable, İzmir Metro frequencies and İzmir Metropolitan Municipality's open data live bus service.
+- Uses ESHOT's official timetables and route geometry for the four Evka 4 to Bornova Metro lines, İzmir Metro frequencies and İzmir Metropolitan Municipality's open data live bus service.
 - A Monte Carlo model combines those with the trips you log, so predictions adapt to your real travel times.
 - Works offline once installed. Add it to your home screen from Safari (Share, then Add to Home Screen).
 
