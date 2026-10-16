@@ -1,0 +1,47 @@
+name: data-pull
+on:
+  push:
+    branches: [cors-check]
+permissions:
+  contents: write
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download ESHOT open data and keep the Evka 4 lines
+        run: |
+          set -e
+          mkdir -p data
+          base=https://openfiles.izmir.bel.tr/211488/docs
+          : > data/meta.txt
+          for f in eshot-otobus-hareketsaatleri eshot-otobus-hat-guzergahlari eshot-otobus-duraklari; do
+            curl -sSL -m 180 -D /tmp/$f.h -o /tmp/$f.csv "$base/$f.csv"
+            echo "$f $(stat -c %s /tmp/$f.csv) $(grep -i '^last-modified' /tmp/$f.h | tr -d '\r')" >> data/meta.txt
+          done
+          python3 - <<'PY'
+          import csv, io
+          LINES = {'565', '566', '568', '585'}
+          def rows(name):
+              raw = open('/tmp/' + name + '.csv', 'rb').read()
+              try: txt = raw.decode('utf-8-sig')
+              except UnicodeDecodeError: txt = raw.decode('cp1254')
+              return list(csv.reader(io.StringIO(txt), delimiter=';'))
+          for name, test in [('eshot-otobus-hareketsaatleri', lambda r: r[0] in LINES),
+                             ('eshot-otobus-hat-guzergahlari', lambda r: r[0] in LINES),
+                             ('eshot-otobus-duraklari', lambda r: len(r) > 4 and set(r[4].split('-')) & LINES)]:
+              rs = rows(name)
+              with open('data/' + name + '.csv', 'w', encoding='utf-8', newline='') as f:
+                  w = csv.writer(f, delimiter=';')
+                  w.writerow(rs[0])
+                  for r in rs[1:]:
+                      if r and test(r): w.writerow(r)
+          PY
+          wc -l data/*
+      - name: Save the filtered files to this branch
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@users.noreply.github.com
+          git add data
+          git commit -q -m "Filtered ESHOT open data for lines 565 566 568 585" || echo "nothing to commit"
+          git push
