@@ -9,6 +9,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Check cross-origin headers of the stop endpoint
+        run: |
+          mkdir -p data
+          for u in duragayaklasanotobusler/31364 hattinyaklasanotobusleri/565/31364; do
+            curl -sS -m 25 -D /tmp/h.txt -o /tmp/b.txt -H "Origin: https://asno10.github.io" "https://openapi.izmir.bel.tr/api/iztek/$u" || echo "curl failed" > /tmp/h.txt
+            echo "$u | $(grep -i -E '^HTTP|access-control-allow-origin' /tmp/h.txt | tr -d '\r' | tr '\n' ' ') | $(head -c 300 /tmp/b.txt)" >> data/cors2.txt
+          done
       - name: Download ESHOT open data and keep the Evka 4 lines
         run: |
           set -e
