@@ -1,14 +1,14 @@
 // Offline support for Derse Yetiş. Caches only the app's own files; the live bus API is never cached.
-const CACHE = 'derse-yetis-v4';
+const CACHE = 'derse-yetis-v5';
 const ASSETS = [
   './',
   './index.html',
-  './manifest.webmanifest',
-  './icons/apple-touch-icon.png',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/icon-maskable-512.png',
-  './icons/favicon-64.png',
+  './manifest.webmanifest?v=2',
+  './icons/apple-touch-icon.png?v=2',
+  './icons/icon-192.png?v=2',
+  './icons/icon-512.png?v=2',
+  './icons/icon-maskable-512.png?v=2',
+  './icons/favicon-64.png?v=2',
   './fonts/barlow-condensed-latin-500-normal.woff2',
   './fonts/barlow-condensed-latin-600-normal.woff2',
   './fonts/barlow-condensed-latin-ext-500-normal.woff2',
